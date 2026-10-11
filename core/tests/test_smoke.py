@@ -1,11 +1,11 @@
-"""Milestone 0 smoke tests: the app boots, serves a page, and reports health."""
+"""Smoke tests: the app boots, serves a page, and reports health."""
 import pytest
 from django.urls import reverse
 
 
 @pytest.mark.django_db
-def test_home_page_renders(client):
-    response = client.get(reverse("home"))
+def test_catalog_page_renders(client):
+    response = client.get(reverse("catalog:product_list"))
     assert response.status_code == 200
     assert b"shopfront" in response.content
 

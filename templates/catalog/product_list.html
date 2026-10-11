@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if current %}{{ current.name }} · {% endif %}shopfront{% endblock %}
+{% block content %}
+  <h1>{% if current %}{{ current.name }}{% else %}Everything{% endif %}</h1>
+  <ul class="grid">
+    {% for product in products %}
+      <li class="card">
+        <a href="{{ product.get_absolute_url }}">
+          {% if product.image %}<img src="{% static product.image %}" alt="" width="300" height="200">{% endif %}
+          <span class="name">{{ product.name }}</span>
+        </a>
+        <span class="price">{{ product.price }} kr</span>
+        {% if not product.is_in_stock %}<span class="badge">Out of stock</span>{% endif %}
+      </li>
+    {% empty %}
+      <li class="empty">Nothing here yet.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -8,7 +8,15 @@
   <link rel="stylesheet" href="{% static 'site.css' %}">
 </head>
 <body>
-  <header><a class="brand" href="/">shopfront</a></header>
+  <header>
+    <a class="brand" href="{% url 'catalog:product_list' %}">shopfront</a>
+    <nav>
+      {% for category in categories %}
+        <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on"{% endif %}>{{ category.name }}</a>
+      {% endfor %}
+    </nav>
+  </header>
   <main>{% block content %}{% endblock %}</main>
+  <footer>Demo store · payments run in Stripe test mode · no real orders are fulfilled</footer>
 </body>
 </html>
