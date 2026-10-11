@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Cart · shopfront{% endblock %}
+{% block content %}
+  <h1>Your cart</h1>
+  {% if cart %}
+    <table class="cart">
+      <thead><tr><th>Item</th><th>Price</th><th>Quantity</th><th>Total</th><th></th></tr></thead>
+      <tbody>
+        {% for line in cart.lines %}
+          <tr>
+            <td><a href="{{ line.product.get_absolute_url }}">{{ line.product.name }}</a></td>
+            <td>{{ line.product.price }} kr</td>
+            <td>
+              <form method="post" action="{% url 'catalog:cart_update' line.product.slug %}">
+                {% csrf_token %}
+                <input type="number" name="quantity" value="{{ line.quantity }}" min="0"
+                       max="{{ line.product.stock }}" aria-label="Quantity for {{ line.product.name }}">
+                <button type="submit">Update</button>
+              </form>
+            </td>
+            <td>{{ line.total }} kr</td>
+            <td>
+              <form method="post" action="{% url 'catalog:cart_remove' line.product.slug %}">
+                {% csrf_token %}
+                <button type="submit" class="link">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3">Total</td><td class="price big">{{ cart.total }} kr</td><td></td></tr>
+      </tfoot>
+    </table>
+    <p class="soon">Checkout arrives in Milestone 3.</p>
+  {% else %}
+    <p class="empty">Your cart is empty. <a href="{% url 'catalog:product_list' %}">Browse the shop</a>.</p>
+  {% endif %}
+{% endblock %}
