@@ -1,0 +1,19 @@
+# Render blueprint. The database lives on Neon, so DATABASE_URL is set by hand
+# in the Render dashboard (sync: false keeps it out of this file and out of git).
+services:
+  - type: web
+    name: shopfront
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.3"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
