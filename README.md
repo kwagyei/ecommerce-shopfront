@@ -2,7 +2,7 @@
 
 A small Django store with Stripe test-mode checkout and an admin panel.
 
-**Status:** Milestone 1 — catalog, admin and seed data. No cart yet.
+**Status:** Milestone 2 — catalog and a working cart. Checkout next.
 
 ## Why this exists
 
@@ -41,7 +41,7 @@ Both run in CI on every pull request, along with Django's `check --deploy`.
 |---|---|---|
 | 0 | Skeleton, CI, deployment, health check | ✅ |
 | 1 | Catalog: products, categories, admin, seed data | ✅ |
-| 2 | Session cart: add, update, remove, server-side totals | |
+| 2 | Session cart: add, update, remove, server-side totals | ✅ |
 | 3 | Stripe Checkout session | |
 | 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | |
 | 5 | Admin: order management, shipping actions, event audit | |
@@ -57,6 +57,25 @@ are summed in minor units and converted to a decimal once, for display only.
 filesystem — anything uploaded disappears on the next redeploy. The `Product.image` field
 holds a path under `static/`, so images survive deploys and cost nothing to serve. Real
 uploads would need object storage, which would mean a paid account.
+
+**The session stores product ids and quantities, nothing else.** Prices are read from
+the database every time the cart is rendered. A session cookie is client-visible data, so
+a price held there would be a discount waiting to be forged — and reading live means an
+admin price change reaches carts that already hold the product.
+
+**The cart reconciles against the catalog before it is shown.** A cart can sit in a
+session for weeks, during which a product can be withdrawn, deleted or sold out. Rather
+than failing at checkout, the cart clamps quantities to available stock, drops what can no
+longer be sold, and says what it changed.
+
+**Browsing creates no session.** The cart deliberately does not touch the session until
+something is added. An earlier version called `session.setdefault` on construction, which
+marked the session dirty on every request and wrote a session row for every visitor,
+crawlers included. There's a regression test for it.
+
+**Plain forms, not HTMX.** The cart works with JavaScript disabled and depends on no
+third-party script at runtime. HTMX can be layered on later as enhancement; starting with
+it would have meant a CDN dependency for a demo that doesn't need one.
 
 **Withdrawn products return 404, not 403.** A 403 confirms the product exists; a 404
 doesn't leak that an item was ever listed.

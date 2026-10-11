@@ -15,7 +15,13 @@
         <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on"{% endif %}>{{ category.name }}</a>
       {% endfor %}
     </nav>
+    <a class="cart-link" href="{% url 'catalog:cart' %}">Cart{% if cart_count %} <span class="count">{{ cart_count }}</span>{% endif %}</a>
   </header>
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
+    </ul>
+  {% endif %}
   <main>{% block content %}{% endblock %}</main>
   <footer>Demo store · payments run in Stripe test mode · no real orders are fulfilled</footer>
 </body>

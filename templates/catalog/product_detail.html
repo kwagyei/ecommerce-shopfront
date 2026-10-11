@@ -14,7 +14,13 @@
         <p class="badge">Out of stock</p>
       {% endif %}
       <p>{{ product.description }}</p>
-      <p class="soon">Add to cart arrives in Milestone 2.</p>
+      {% if product.is_in_stock %}
+        <form method="post" action="{% url 'catalog:cart_add' product.slug %}" class="add">
+          {% csrf_token %}
+          <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" aria-label="Quantity">
+          <button type="submit">Add to cart</button>
+        </form>
+      {% endif %}
     </div>
   </article>
 {% endblock %}
