@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Thank you · shopfront{% endblock %}
+{% block content %}
+  <h1>Thank you</h1>
+  <p>Your payment went through. Stripe emails a receipt to the address you gave at checkout.</p>
+  <p>This is a demo store running in Stripe test mode: no money moved and nothing will ship.</p>
+  <p><a href="{% url 'catalog:product_list' %}">Back to the shop</a></p>
+{% endblock %}

@@ -29,7 +29,9 @@ main { max-width: 1040px; }
 .detail img { width: 100%; height: auto; border-radius: 12px; }
 .crumb a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
 .stock { color: var(--accent); }
-.soon { color: var(--muted); font-style: italic; font-size: 0.9rem; }
+.checkout { margin-top: 16px; text-align: right; }
+.checkout button { padding: 10px 22px; font-size: 1rem; }
+.test-card { color: var(--muted); font-size: 0.9rem; text-align: right; }
 .empty { color: var(--muted); }
 @media (max-width: 720px) { .detail { grid-template-columns: 1fr; } nav { display: flex; margin: 10px 0 0; } header { display: block; } }
 
