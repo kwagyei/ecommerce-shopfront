@@ -17,6 +17,7 @@ CATEGORIES = [
 ]
 
 # (slug, name, category slug, price in minor units, stock, description)
+# fmt: off
 PRODUCTS = [
     ("enamel-kettle", "Enamel kettle", "kitchen", 44900, 12,
      "Speckled enamel over steel, 1.5 litres. Takes a flame or an induction hob without fuss."),
@@ -43,6 +44,7 @@ PRODUCTS = [
     ("felt-mousepad", "Felt mousepad", "desk", 9900, 0,
      "5 mm merino felt, 900 × 400 mm. Covers the keyboard and most of the desk with it."),
 ]
+# fmt: on
 
 
 class Command(BaseCommand):
@@ -71,7 +73,5 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Seeded {len(CATEGORIES)} categories and {len(PRODUCTS)} products."
-            )
+            self.style.SUCCESS(f"Seeded {len(CATEGORIES)} categories and {len(PRODUCTS)} products.")
         )

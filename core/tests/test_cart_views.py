@@ -1,4 +1,5 @@
 """The cart through the HTTP surface: forms, redirects, messages and tamper resistance."""
+
 import pytest
 from django.urls import reverse
 
@@ -115,7 +116,7 @@ def test_carts_do_not_leak_between_sessions(client):
     assert b"Your cart is empty" in Client().get(reverse("catalog:cart")).content
 
 
-def test_browsing_does_not_create_a_session(client, django_assert_num_queries):
+def test_browsing_does_not_create_a_session(client):
     """Regression: the cart used to call session.setdefault on construction, which
     marked the session dirty on every request and wrote a session row for every
     visitor — crawlers included — before anyone added anything."""

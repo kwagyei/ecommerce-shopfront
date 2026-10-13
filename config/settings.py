@@ -3,6 +3,7 @@
 Every environment-specific value is read from the environment, with defaults that
 are safe for local development only. Nothing secret is committed; see .env.example.
 """
+
 import os
 from pathlib import Path
 

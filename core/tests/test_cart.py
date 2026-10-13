@@ -1,4 +1,5 @@
 """Unit tests for the cart itself, independent of any view."""
+
 from decimal import Decimal
 
 import pytest

@@ -15,9 +15,7 @@ def product_list(request):
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
     products = Product.objects.active().filter(category=category).select_related("category")
-    return render(
-        request, "catalog/product_list.html", {"products": products, "current": category}
-    )
+    return render(request, "catalog/product_list.html", {"products": products, "current": category})
 
 
 def product_detail(request, slug):
@@ -51,9 +49,7 @@ def cart_add(request, slug):
     before = cart.quantity_of(product)
     added = cart.add(product, requested) - before
     if added == 0:
-        messages.warning(
-            request, f"You already have all {before} of {product.name} in your cart."
-        )
+        messages.warning(request, f"You already have all {before} of {product.name} in your cart.")
     elif added < requested:
         more = " more" if before else ""
         messages.warning(request, f"Only {added}{more} of {product.name} could be added.")
