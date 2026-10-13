@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from core.models import Product
@@ -55,3 +56,17 @@ def test_string_representations_are_the_names():
     product = make_product()
     assert str(product) == "Enamel kettle"
     assert str(product.category) == "Kitchen"
+
+
+def test_an_image_path_that_is_not_a_static_file_is_rejected():
+    """In production the hashed static storage raises on a missing file, so a typo in
+    this field would 500 every page that lists the product, home page included."""
+    product = make_product(image="products/kettle.svg")
+    with pytest.raises(ValidationError) as excinfo:
+        product.full_clean()
+    assert "image" in excinfo.value.message_dict
+
+
+def test_a_real_static_image_path_and_a_blank_one_are_both_accepted():
+    make_product(slug="a", image="products/enamel-kettle.svg").full_clean()
+    make_product(slug="b", image="").full_clean()

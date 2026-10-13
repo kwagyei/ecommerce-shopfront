@@ -1,7 +1,8 @@
 """Fill an empty database with a believable catalog.
 
-Idempotent: it matches on slug and updates, so running it twice leaves twelve
-products rather than twenty-four. The deployed demo runs this once after migrate.
+build.sh runs this on every deploy, so it only ever acts on an empty catalog. Once
+products exist it does nothing: stock is decremented by real orders and prices and
+withdrawals are edited in the admin, and a deploy must never put those back.
 """
 
 from django.core.management.base import BaseCommand
@@ -16,6 +17,7 @@ CATEGORIES = [
 ]
 
 # (slug, name, category slug, price in minor units, stock, description)
+# fmt: off
 PRODUCTS = [
     ("enamel-kettle", "Enamel kettle", "kitchen", 44900, 12,
      "Speckled enamel over steel, 1.5 litres. Takes a flame or an induction hob without fuss."),
@@ -42,34 +44,34 @@ PRODUCTS = [
     ("felt-mousepad", "Felt mousepad", "desk", 9900, 0,
      "5 mm merino felt, 900 × 400 mm. Covers the keyboard and most of the desk with it."),
 ]
+# fmt: on
 
 
 class Command(BaseCommand):
-    help = "Create or refresh the demo catalog."
+    help = "Create the demo catalog if the database has none. Never touches existing data."
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if Product.objects.exists():
+            self.stdout.write("Catalog already has products; leaving it alone.")
+            return
+
         categories = {}
         for name, slug in CATEGORIES:
-            category, _ = Category.objects.update_or_create(slug=slug, defaults={"name": name})
+            category, _ = Category.objects.get_or_create(slug=slug, defaults={"name": name})
             categories[slug] = category
 
         for slug, name, category_slug, price_minor, stock, description in PRODUCTS:
-            Product.objects.update_or_create(
+            Product.objects.create(
                 slug=slug,
-                defaults={
-                    "name": name,
-                    "category": categories[category_slug],
-                    "price_minor": price_minor,
-                    "stock": stock,
-                    "description": description,
-                    "image": f"products/{slug}.svg",
-                    "is_active": True,
-                },
+                name=name,
+                category=categories[category_slug],
+                price_minor=price_minor,
+                stock=stock,
+                description=description,
+                image=f"products/{slug}.svg",
             )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Seeded {len(CATEGORIES)} categories and {len(PRODUCTS)} products."
-            )
+            self.style.SUCCESS(f"Seeded {len(CATEGORIES)} categories and {len(PRODUCTS)} products.")
         )

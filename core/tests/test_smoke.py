@@ -1,4 +1,5 @@
 """Smoke tests: the app boots, serves a page, and reports health."""
+
 import pytest
 from django.urls import reverse
 

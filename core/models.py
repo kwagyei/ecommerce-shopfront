@@ -1,7 +1,16 @@
 from decimal import Decimal
 
+from django.contrib.staticfiles import finders
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+
+
+def validate_static_path(path: str) -> None:
+    """The hashed static storage raises on a missing file, so a typo here would 500
+    every page that shows the product. Catch it when the product is saved instead."""
+    if path and not finders.find(path):
+        raise ValidationError(f"No static file at static/{path}.")
 
 
 class Category(models.Model):
@@ -49,7 +58,8 @@ class Product(models.Model):
     image = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Path under static/, e.g. products/kettle.svg",
+        validators=[validate_static_path],
+        help_text="Path under static/, e.g. products/enamel-kettle.svg",
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

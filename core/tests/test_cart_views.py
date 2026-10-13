@@ -1,4 +1,5 @@
 """The cart through the HTTP surface: forms, redirects, messages and tamper resistance."""
+
 import pytest
 from django.urls import reverse
 
@@ -115,7 +116,7 @@ def test_carts_do_not_leak_between_sessions(client):
     assert b"Your cart is empty" in Client().get(reverse("catalog:cart")).content
 
 
-def test_browsing_does_not_create_a_session(client, django_assert_num_queries):
+def test_browsing_does_not_create_a_session(client):
     """Regression: the cart used to call session.setdefault on construction, which
     marked the session dirty on every request and wrote a session row for every
     visitor — crawlers included — before anyone added anything."""
@@ -133,3 +134,52 @@ def test_adding_to_the_cart_does_create_a_session(client):
 
     add(client, make_product(stock=5), 1)
     assert Session.objects.count() == 1
+
+
+def test_a_partial_add_on_top_of_a_held_quantity_says_so(client):
+    """Regression: the check compared the total held with the amount requested, so with
+    2 held and 3 in stock, asking for 2 more added 1 and still reported success."""
+    product = make_product(stock=3)
+    add(client, product, 2)
+    response = add(client, product, 2)
+    assert b"Only 1 more" in response.content
+    assert b"added to your cart" not in response.content
+
+
+def test_adding_when_all_stock_is_already_held_says_so(client):
+    product = make_product(stock=2)
+    add(client, product, 2)
+    response = add(client, product, 1)
+    assert b"already have all 2" in response.content
+
+
+def test_adding_a_zero_or_negative_quantity_changes_nothing(client):
+    """Regression: quantity=-5 emptied the line and still said "added to your cart"."""
+    product = make_product(stock=5)
+    add(client, product, 2)
+    for quantity in [0, -5]:
+        response = add(client, product, quantity)
+        assert b"added to your cart" not in response.content
+    assert b'<span class="count">2</span>' in client.get(reverse("catalog:cart")).content
+
+
+def test_a_withdrawn_product_in_the_cart_can_still_be_removed(client):
+    product = make_product(stock=5)
+    add(client, product, 1)
+    Product.objects.filter(pk=product.pk).update(is_active=False)
+    client.post(reverse("catalog:cart_remove", args=[product.slug]))
+    from django.contrib.sessions.models import Session
+
+    assert Session.objects.get().get_decoded().get("cart") == {}
+
+
+def test_removing_a_withdrawn_product_not_in_the_cart_reveals_nothing(client):
+    """Regression: remove looked products up without .active(), so it named withdrawn
+    products that the product page correctly 404s. A withdrawn slug must be
+    indistinguishable from one that never existed."""
+    make_product(name="Secret prototype", slug="secret", is_active=False)
+    withdrawn = client.post(reverse("catalog:cart_remove", args=["secret"]), follow=True)
+    missing = client.post(reverse("catalog:cart_remove", args=["no-such-thing"]), follow=True)
+    assert withdrawn.status_code == missing.status_code
+    assert b"Secret prototype" not in withdrawn.content
+    assert withdrawn.content == missing.content

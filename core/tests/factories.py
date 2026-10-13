@@ -1,4 +1,5 @@
 """Small helpers so tests read as what they're testing, not as object construction."""
+
 from core.models import Category, Product
 
 
