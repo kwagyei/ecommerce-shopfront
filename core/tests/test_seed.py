@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.staticfiles import finders
 from django.core.management import call_command
 
 from core.models import Category, Product
@@ -53,3 +54,9 @@ def test_seeded_products_all_have_an_image_and_a_price():
 def test_seed_includes_sold_out_stock_so_that_state_is_visible_in_the_demo():
     call_command("seed", verbosity=0)
     assert Product.objects.filter(stock=0).exists()
+
+
+def test_every_seeded_image_is_a_real_static_file():
+    call_command("seed", verbosity=0)
+    for product in Product.objects.all():
+        assert finders.find(product.image), product.image
