@@ -17,6 +17,81 @@ when Stripe delivers the same event twice.** See [Milestones](#milestones).
 Payments run in **Stripe test mode only**. The app never handles card details — checkout
 happens on Stripe's hosted page.
 
+## How it fits together
+
+```mermaid
+flowchart LR
+    customer(["Customer's browser"])
+    dev(["Developer"])
+
+    subgraph github["GitHub"]
+        repo[("ecommerce-shopfront<br/>repository")]
+        ci["Actions CI<br/>pytest · ruff · check --deploy"]
+    end
+
+    subgraph render["Render · free web service"]
+        app["Django on Gunicorn<br/>Whitenoise serves static files"]
+    end
+
+    subgraph neon["Neon · free Postgres"]
+        db[("Catalog, sessions<br/>orders from milestone 4")]
+    end
+
+    subgraph stripe["Stripe · test mode"]
+        hosted["Hosted Checkout page"]
+        api["Checkout Sessions API"]
+    end
+
+    dev -- "pull request" --> repo
+    repo -- "runs on every PR" --> ci
+    repo -- "merge to main triggers build.sh:<br/>check, collectstatic, migrate, seed" --> app
+
+    customer -- "HTTPS: browse, cart, checkout" --> app
+    app -- "SQL over TLS" --> db
+    app -- "create Checkout Session<br/>(secret key, server side)" --> api
+    app -. "303 redirect" .-> hosted
+    customer -- "card details go to Stripe only" --> hosted
+    hosted -. "redirect back to success or cancel" .-> customer
+    api -. "signed webhook event (milestone 4)" .-> app
+```
+
+Secrets (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STRIPE_SECRET_KEY`) live only in Render's
+environment and a local, gitignored `.env`. Dashed lines are redirects or, for the
+webhook, not yet built.
+
+### A purchase, step by step
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Customer
+    participant A as Django app (Render)
+    participant D as Postgres (Neon)
+    participant S as Stripe
+
+    C->>A: POST /checkout/
+    A->>D: Re-read prices and stock for the cart
+    alt the cart changed since it was shown
+        A-->>C: Back to the cart, with what changed
+    else the cart is unchanged
+        A->>S: Create Checkout Session (prices in öre, product id per line)
+        S-->>A: Session id and hosted URL
+        A-->>C: 303 redirect to Stripe
+        C->>S: Pays with test card 4242 4242 4242 4242
+        S-->>C: Redirect to /checkout/success/?session_id=…
+        C->>A: GET success page
+        A-->>C: Clear the cart if the session id is this browser's own
+        Note over S,A: Milestone 4
+        S->>A: checkout.session.completed (signed, retried until acknowledged)
+        A->>D: Verify signature, record the event id once, create the order, decrement stock
+    end
+```
+
+The success redirect is not trusted as proof of payment: a customer can close the tab
+before it happens, and anyone can type the URL. Orders come only from the signed webhook,
+which Stripe retries, and the stored event id stops a replayed event from creating a
+second order.
+
 ## Running it locally
 
 ```bash
