@@ -1,7 +1,8 @@
 """Fill an empty database with a believable catalog.
 
-Idempotent: it matches on slug and updates, so running it twice leaves twelve
-products rather than twenty-four. The deployed demo runs this once after migrate.
+build.sh runs this on every deploy, so it only ever acts on an empty catalog. Once
+products exist it does nothing: stock is decremented by real orders and prices and
+withdrawals are edited in the admin, and a deploy must never put those back.
 """
 
 from django.core.management.base import BaseCommand
@@ -45,27 +46,28 @@ PRODUCTS = [
 
 
 class Command(BaseCommand):
-    help = "Create or refresh the demo catalog."
+    help = "Create the demo catalog if the database has none. Never touches existing data."
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if Product.objects.exists():
+            self.stdout.write("Catalog already has products; leaving it alone.")
+            return
+
         categories = {}
         for name, slug in CATEGORIES:
-            category, _ = Category.objects.update_or_create(slug=slug, defaults={"name": name})
+            category, _ = Category.objects.get_or_create(slug=slug, defaults={"name": name})
             categories[slug] = category
 
         for slug, name, category_slug, price_minor, stock, description in PRODUCTS:
-            Product.objects.update_or_create(
+            Product.objects.create(
                 slug=slug,
-                defaults={
-                    "name": name,
-                    "category": categories[category_slug],
-                    "price_minor": price_minor,
-                    "stock": stock,
-                    "description": description,
-                    "image": f"products/{slug}.svg",
-                    "is_active": True,
-                },
+                name=name,
+                category=categories[category_slug],
+                price_minor=price_minor,
+                stock=stock,
+                description=description,
+                image=f"products/{slug}.svg",
             )
 
         self.stdout.write(
