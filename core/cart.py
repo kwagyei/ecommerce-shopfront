@@ -3,9 +3,10 @@
 Two rules drive the design:
 
 1. **Only product ids and quantities live in the session.** Prices are read from the
-   database every time the cart is rendered. A session cookie is client-visible data;
-   if the price lived there, a tampered cookie would be a discount. It also means a
-   price change in the admin is reflected immediately in everyone's cart.
+   database every time the cart is rendered, so a price change in the admin is
+   reflected immediately in everyone's cart and no cart can pay a stale price. The
+   database session backend keeps the data server-side, but the cart doesn't rely on
+   that: under a signed-cookie session engine, a stored price would be client data.
 2. **Arithmetic stays in integer minor units.** Totals are summed as whole öre and
    converted to a decimal once, for display.
 """

@@ -2,6 +2,9 @@
 
 A small Django store with Stripe test-mode checkout and an admin panel.
 
+**Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**. It runs on a
+free instance that sleeps when idle, so the first visit can take about a minute to wake it.
+
 **Status:** Milestone 2 — catalog and a working cart. Checkout next.
 
 ## Why this exists
@@ -31,9 +34,10 @@ The app uses SQLite locally and Postgres wherever `DATABASE_URL` is set.
 ```bash
 pytest
 ruff check .
+ruff format --check .
 ```
 
-Both run in CI on every pull request, along with Django's `check --deploy`.
+All three run in CI on every pull request, along with Django's `check --deploy`.
 
 ## Milestones
 
@@ -59,9 +63,17 @@ holds a path under `static/`, so images survive deploys and cost nothing to serv
 uploads would need object storage, which would mean a paid account.
 
 **The session stores product ids and quantities, nothing else.** Prices are read from
-the database every time the cart is rendered. A session cookie is client-visible data, so
-a price held there would be a discount waiting to be forged — and reading live means an
-admin price change reaches carts that already hold the product.
+the database every time the cart is rendered, so an admin price change reaches carts that
+already hold the product, and a cart can never pay a stale price. With Django's database
+sessions the browser only holds an opaque key, but the rule doesn't depend on that: if
+the session engine were switched to signed cookies, a price stored there would be readable
+client data and one step from a forged discount.
+
+**Deploys never overwrite catalog data.** `build.sh` runs `seed` on every deploy, and
+`seed` only acts on an empty catalog. Once orders decrement stock and prices are edited in
+the admin, a deploy that reset them would let the shop sell units it no longer has. There
+are regression tests for it. For the same reason, a deploy without `DJANGO_SECRET_KEY`
+fails `check --deploy` rather than falling back to the public development key.
 
 **The cart reconciles against the catalog before it is shown.** A cart can sit in a
 session for weeks, during which a product can be withdrawn, deleted or sold out. Rather
@@ -82,6 +94,22 @@ doesn't leak that an item was ever listed.
 
 **The category nav comes from a context processor.** It was built per-view at first and
 promptly went missing from the product detail page. There's a regression test for it now.
+
+## Known limitations
+
+- **Cold starts.** The free Render instance sleeps after about 15 minutes idle, and the
+  Neon database after 5, so the first request after a quiet spell takes about a minute.
+- **Free-tier ceilings.** Render allows 750 instance hours a month and Neon 100 compute
+  hours. A demo stays far below both, but sustained bot traffic could pause the database
+  until the next month. Nothing is billed: no card is on file.
+- **Stock is not reserved while it sits in a cart.** Two customers can both hold the last
+  unit. The cart re-checks stock when shown, and checkout (milestone 3) will be the point
+  where it is enforced.
+- **New demo products don't reach an existing database.** Because `seed` only fills an
+  empty catalog, products added to the seed list later have to be created in the admin.
+- **Images ship with the code.** Adding a product image means a commit and a deploy, the
+  trade-off for not paying for object storage.
+- **Checkout isn't live yet.** Milestones 3 and 4 add Stripe test-mode payments.
 
 ## Deliberately out of scope
 
