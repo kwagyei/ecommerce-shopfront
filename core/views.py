@@ -39,13 +39,24 @@ def cart_add(request, slug):
     product = get_object_or_404(Product.objects.active(), slug=slug)
     requested = _quantity_from(request, default=1)
 
+    if requested < 1:
+        # The form's min="1" stops this in a browser; a hand-made POST gets no effect.
+        messages.error(request, "Choose a quantity of at least 1.")
+        return redirect(product.get_absolute_url())
     if product.stock == 0:
         messages.error(request, f"{product.name} is out of stock.")
         return redirect(product.get_absolute_url())
 
-    held = Cart(request).add(product, requested)
-    if held < requested:
-        messages.warning(request, f"Only {held} of {product.name} could be added.")
+    cart = Cart(request)
+    before = cart.quantity_of(product)
+    added = cart.add(product, requested) - before
+    if added == 0:
+        messages.warning(
+            request, f"You already have all {before} of {product.name} in your cart."
+        )
+    elif added < requested:
+        more = " more" if before else ""
+        messages.warning(request, f"Only {added}{more} of {product.name} could be added.")
     else:
         messages.success(request, f"{product.name} added to your cart.")
     return redirect("catalog:cart")
@@ -66,9 +77,14 @@ def cart_update(request, slug):
 
 @require_POST
 def cart_remove(request, slug):
-    product = get_object_or_404(Product, slug=slug)
-    Cart(request).remove(product)
-    messages.info(request, f"{product.name} removed from your cart.")
+    """Works for withdrawn products too, so a customer can clear one out of their cart.
+
+    Only names the product when it was actually in this cart. Otherwise the response is
+    the same as for a slug that never existed, so withdrawn products stay unconfirmed.
+    """
+    product = Product.objects.filter(slug=slug).first()
+    if product is not None and Cart(request).remove(product):
+        messages.info(request, f"{product.name} removed from your cart.")
     return redirect("catalog:cart")
 
 
