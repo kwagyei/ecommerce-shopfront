@@ -9,6 +9,8 @@ from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
 
+from core.checks import DEV_SECRET_KEY
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -21,8 +23,9 @@ def env_list(name: str) -> list[str]:
     return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
 
 
-# Insecure default so `manage.py runserver` works out of the box; production sets its own.
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-do-not-use-in-production")
+# Insecure default so `manage.py runserver` works out of the box. A deploy still using
+# it fails `check --deploy` in build.sh (core/checks.py), so production must set its own.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS") or (["*"] if DEBUG else [])
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
