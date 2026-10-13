@@ -17,3 +17,6 @@ services:
         value: "false"
       - key: DATABASE_URL
         sync: false
+      # Stripe TEST key (sk_test_...). Set in the dashboard; empty disables checkout.
+      - key: STRIPE_SECRET_KEY
+        sync: false

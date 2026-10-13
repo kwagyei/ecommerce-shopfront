@@ -1,10 +1,21 @@
+import logging
+
+import stripe
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from core import payments
 from core.cart import Cart
 from core.models import Category, Product
+
+logger = logging.getLogger(__name__)
+
+# The id of the Checkout Session this browser started, so the success page only acts
+# on its own payment and not on any session id pasted into the URL.
+CHECKOUT_SESSION_KEY = "checkout_session_id"
 
 
 def product_list(request):
@@ -81,6 +92,60 @@ def cart_remove(request, slug):
     product = Product.objects.filter(slug=slug).first()
     if product is not None and Cart(request).remove(product):
         messages.info(request, f"{product.name} removed from your cart.")
+    return redirect("catalog:cart")
+
+
+@require_POST
+def checkout(request):
+    """Turn the cart into a Stripe Checkout Session and send the customer to pay.
+
+    Fulfilment does not happen here or on the success page: a customer can close the
+    tab after paying. Orders are created by the webhook (milestone 4), which Stripe
+    retries until it lands.
+    """
+    cart = Cart(request)
+    notes = cart.reconcile()
+    if notes:
+        # Stock or availability moved since the cart was shown. Let the customer see
+        # what they'd actually be paying for before sending them to Stripe.
+        for note in notes:
+            messages.warning(request, note)
+        return redirect("catalog:cart")
+    if not cart:
+        return redirect("catalog:cart")
+    if not payments.is_configured():
+        messages.error(request, "Checkout isn't available right now. Your cart is saved.")
+        return redirect("catalog:cart")
+
+    try:
+        session = payments.create_checkout_session(
+            cart.lines(),
+            success_url=request.build_absolute_uri(reverse("catalog:checkout_success")),
+            cancel_url=request.build_absolute_uri(reverse("catalog:checkout_cancel")),
+        )
+    except stripe.StripeError:
+        logger.exception("Could not create a Stripe Checkout Session")
+        messages.error(
+            request, "We couldn't reach the payment provider. Your cart is saved; try again."
+        )
+        return redirect("catalog:cart")
+
+    request.session[CHECKOUT_SESSION_KEY] = session.id
+    # 303 so the browser follows with a GET, as Stripe recommends.
+    return HttpResponseRedirect(session.url, status=303)
+
+
+def checkout_success(request):
+    """Shown after payment. Clears the cart, but only for the session this browser started."""
+    started = request.session.get(CHECKOUT_SESSION_KEY)
+    if started and request.GET.get("session_id") == started:
+        Cart(request).clear()
+        del request.session[CHECKOUT_SESSION_KEY]
+    return render(request, "checkout/success.html")
+
+
+def checkout_cancel(request):
+    messages.info(request, "Checkout cancelled. Your cart is as you left it.")
     return redirect("catalog:cart")
 
 

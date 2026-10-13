@@ -14,3 +14,15 @@ def _test_environment(settings):
         **settings.STORAGES,
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     }
+
+
+@pytest.fixture(autouse=True)
+def _no_real_stripe(monkeypatch):
+    """A real test key sits in local .env files. No test may reach Stripe with it: tests
+    that need Stripe use the fake in test_checkout.py, which overrides this."""
+    from core import payments
+
+    def refuse():
+        raise AssertionError("Tests must not call Stripe; use the fake_stripe fixture.")
+
+    monkeypatch.setattr(payments, "stripe_client", refuse)

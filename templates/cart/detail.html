@@ -32,7 +32,12 @@
         <tr><td colspan="3">Total</td><td class="price big">{{ cart.total }} kr</td><td></td></tr>
       </tfoot>
     </table>
-    <p class="soon">Checkout arrives in Milestone 3.</p>
+    <form method="post" action="{% url 'catalog:checkout' %}" class="checkout">
+      {% csrf_token %}
+      <button type="submit">Checkout</button>
+    </form>
+    <p class="test-card">Payments run in Stripe test mode. Pay with card
+      <strong>4242 4242 4242 4242</strong>, any future expiry date and any CVC.</p>
   {% else %}
     <p class="empty">Your cart is empty. <a href="{% url 'catalog:product_list' %}">Browse the shop</a>.</p>
   {% endif %}

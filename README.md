@@ -5,7 +5,8 @@ A small Django store with Stripe test-mode checkout and an admin panel.
 **Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**. It runs on a
 free instance that sleeps when idle, so the first visit can take about a minute to wake it.
 
-**Status:** Milestone 2 — catalog and a working cart. Checkout next.
+**Status:** Milestone 3 — checkout through Stripe's hosted page. The webhook that turns
+payments into orders is next.
 
 ## Why this exists
 
@@ -16,12 +17,87 @@ when Stripe delivers the same event twice.** See [Milestones](#milestones).
 Payments run in **Stripe test mode only**. The app never handles card details — checkout
 happens on Stripe's hosted page.
 
+## How it fits together
+
+```mermaid
+flowchart LR
+    customer(["Customer's browser"])
+    dev(["Developer"])
+
+    subgraph github["GitHub"]
+        repo[("ecommerce-shopfront<br/>repository")]
+        ci["Actions CI<br/>pytest · ruff · check --deploy"]
+    end
+
+    subgraph render["Render · free web service"]
+        app["Django on Gunicorn<br/>Whitenoise serves static files"]
+    end
+
+    subgraph neon["Neon · free Postgres"]
+        db[("Catalog, sessions<br/>orders from milestone 4")]
+    end
+
+    subgraph stripe["Stripe · test mode"]
+        hosted["Hosted Checkout page"]
+        api["Checkout Sessions API"]
+    end
+
+    dev -- "pull request" --> repo
+    repo -- "runs on every PR" --> ci
+    repo -- "merge to main triggers build.sh:<br/>check, collectstatic, migrate, seed" --> app
+
+    customer -- "HTTPS: browse, cart, checkout" --> app
+    app -- "SQL over TLS" --> db
+    app -- "create Checkout Session<br/>(secret key, server side)" --> api
+    app -. "303 redirect" .-> hosted
+    customer -- "card details go to Stripe only" --> hosted
+    hosted -. "redirect back to success or cancel" .-> customer
+    api -. "signed webhook event (milestone 4)" .-> app
+```
+
+Secrets (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STRIPE_SECRET_KEY`) live only in Render's
+environment and a local, gitignored `.env`. Dashed lines are redirects or, for the
+webhook, not yet built.
+
+### A purchase, step by step
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Customer
+    participant A as Django app (Render)
+    participant D as Postgres (Neon)
+    participant S as Stripe
+
+    C->>A: POST /checkout/
+    A->>D: Re-read prices and stock for the cart
+    alt the cart changed since it was shown
+        A-->>C: Back to the cart, with what changed
+    else the cart is unchanged
+        A->>S: Create Checkout Session (prices in öre, product id per line)
+        S-->>A: Session id and hosted URL
+        A-->>C: 303 redirect to Stripe
+        C->>S: Pays with test card 4242 4242 4242 4242
+        S-->>C: Redirect to /checkout/success/?session_id=…
+        C->>A: GET success page
+        A-->>C: Clear the cart if the session id is this browser's own
+        Note over S,A: Milestone 4
+        S->>A: checkout.session.completed (signed, retried until acknowledged)
+        A->>D: Verify signature, record the event id once, create the order, decrement stock
+    end
+```
+
+The success redirect is not trusted as proof of payment: a customer can close the tab
+before it happens, and anyone can type the URL. Orders come only from the signed webhook,
+which Stripe retries, and the stored event id stops a replayed event from creating a
+second order.
+
 ## Running it locally
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env          # defaults are fine for local work
+cp .env.example .env          # add an sk_test_ key to try checkout
 python manage.py migrate
 python manage.py seed          # twelve demo products across three categories
 python manage.py runserver
@@ -46,7 +122,7 @@ All three run in CI on every pull request, along with Django's `check --deploy`.
 | 0 | Skeleton, CI, deployment, health check | ✅ |
 | 1 | Catalog: products, categories, admin, seed data | ✅ |
 | 2 | Session cart: add, update, remove, server-side totals | ✅ |
-| 3 | Stripe Checkout session | |
+| 3 | Stripe Checkout session | ✅ |
 | 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | |
 | 5 | Admin: order management, shipping actions, event audit | |
 | 6 | Demo polish: screenshots, seeded data, test-card instructions | |
@@ -85,6 +161,17 @@ something is added. An earlier version called `session.setdefault` on constructi
 marked the session dirty on every request and wrote a session row for every visitor,
 crawlers included. There's a regression test for it.
 
+**Checkout is Stripe's hosted page, reached by a server-side redirect.** Card details
+never touch this app, which keeps it out of PCI scope, and no Stripe JavaScript is
+loaded. Line items are built from catalog prices in öre (the unit Stripe expects), and
+each carries its product id for the webhook. The cart is reconciled first: if stock moved,
+the customer reviews the corrected cart instead of paying for a surprise.
+
+**The success page is not proof of payment.** A customer can pay and close the tab before
+the redirect, and anyone can type the success URL. So the success page only clears the
+cart, and only for the Checkout Session that browser started. Creating orders is the
+webhook's job, because Stripe retries it until it lands.
+
 **Plain forms, not HTMX.** The cart works with JavaScript disabled and depends on no
 third-party script at runtime. HTMX can be layered on later as enhancement; starting with
 it would have meant a CDN dependency for a demo that doesn't need one.
@@ -109,7 +196,8 @@ promptly went missing from the product detail page. There's a regression test fo
   empty catalog, products added to the seed list later have to be created in the admin.
 - **Images ship with the code.** Adding a product image means a commit and a deploy, the
   trade-off for not paying for object storage.
-- **Checkout isn't live yet.** Milestones 3 and 4 add Stripe test-mode payments.
+- **Paying doesn't create an order yet.** Checkout takes a test payment, but orders and
+  stock decrements come from the webhook in milestone 4.
 
 ## Deliberately out of scope
 
