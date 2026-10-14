@@ -8,6 +8,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Production runs on Postgres, and the oversell and replay races only show up with
+    # real row locks, so the suite runs on SQLite and again on Postgres.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shopfront
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -25,8 +37,13 @@ jobs:
       - name: Formatting
         run: ruff format --check .
 
-      - name: Tests
+      - name: Tests (SQLite)
         run: pytest
+
+      - name: Tests (Postgres, including race tests)
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/shopfront
+        run: pytest -rs
 
       - name: Django deployment checks
         env:
