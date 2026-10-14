@@ -2,16 +2,45 @@
 {% load static %}
 {% block title %}{% if current %}{{ current.name }} · {% endif %}shopfront{% endblock %}
 {% block content %}
-  <h1>{% if current %}{{ current.name }}{% else %}Everything{% endif %}</h1>
+  {% if not current %}
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Kitchen · Desk · Outdoors</p>
+        <h1>Things made to last.</h1>
+        <p class="lede">A small collection of everyday goods in enamel, oak, wool and brass, chosen to be used for years.</p>
+        <a class="button accent" href="#shop">Shop everything <span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <img src="{% static 'products/enamel-kettle.svg' %}" alt="" width="600" height="400">
+        <img src="{% static 'products/brass-lamp.svg' %}" alt="" width="600" height="400">
+        <img src="{% static 'products/wool-blanket.svg' %}" alt="" width="600" height="400">
+      </div>
+    </section>
+  {% endif %}
+
+  <div class="section-head" id="shop">
+    {% if current %}<h1>{{ current.name }}</h1>{% else %}<h2>Everything</h2>{% endif %}
+    <nav class="chips" aria-label="Filter by category">
+      <a href="{% url 'catalog:product_list' %}#shop"{% if not current %} class="on"{% endif %}>All</a>
+      {% for category in categories %}
+        <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on"{% endif %}>{{ category.name }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+
   <ul class="grid">
     {% for product in products %}
-      <li class="card">
+      <li class="card{% if not product.is_in_stock %} sold-out{% endif %}" style="--i: {{ forloop.counter0 }}">
         <a href="{{ product.get_absolute_url }}">
-          {% if product.image %}<img src="{% static product.image %}" alt="" width="300" height="200">{% endif %}
-          <span class="name">{{ product.name }}</span>
+          <div class="media">
+            {% if product.image %}<img src="{% static product.image %}" alt="" width="600" height="400" style="view-transition-name: product-{{ product.pk }}">{% endif %}
+            {% if not product.is_in_stock %}<span class="badge">Out of stock</span>{% endif %}
+          </div>
+          <div class="body">
+            <span class="name">{{ product.name }}</span>
+            <span class="price">{{ product.price }} kr</span>
+          </div>
         </a>
-        <span class="price">{{ product.price }} kr</span>
-        {% if not product.is_in_stock %}<span class="badge">Out of stock</span>{% endif %}
       </li>
     {% empty %}
       <li class="empty">Nothing here yet.</li>

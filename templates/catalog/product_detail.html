@@ -3,22 +3,24 @@
 {% block title %}{{ product.name }} · shopfront{% endblock %}
 {% block content %}
   <article class="detail">
-    {% if product.image %}<img src="{% static product.image %}" alt="" width="480" height="320">{% endif %}
-    <div>
+    <div class="media">
+      {% if product.image %}<img src="{% static product.image %}" alt="{{ product.name }}" width="600" height="400" style="view-transition-name: product-{{ product.pk }}">{% endif %}
+    </div>
+    <div class="info">
       <p class="crumb"><a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a></p>
       <h1>{{ product.name }}</h1>
       <p class="price big">{{ product.price }} kr</p>
       {% if product.is_in_stock %}
         <p class="stock">{{ product.stock }} in stock</p>
       {% else %}
-        <p class="badge">Out of stock</p>
+        <p><span class="badge">Out of stock</span></p>
       {% endif %}
-      <p>{{ product.description }}</p>
+      <p class="description">{{ product.description }}</p>
       {% if product.is_in_stock %}
         <form method="post" action="{% url 'catalog:cart_add' product.slug %}" class="add">
           {% csrf_token %}
           <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" aria-label="Quantity">
-          <button type="submit">Add to cart</button>
+          <button type="submit">Add to cart <span class="arrow" aria-hidden="true">→</span></button>
         </form>
       {% endif %}
     </div>
