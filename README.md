@@ -1,13 +1,21 @@
 # shopfront
 
-A small Django store with Stripe test-mode checkout and an admin panel.
+[![CI](https://github.com/kwagyei/ecommerce-shopfront/actions/workflows/ci.yml/badge.svg)](https://github.com/kwagyei/ecommerce-shopfront/actions/workflows/ci.yml)
 
-**Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**. It runs on a
-free instance that sleeps when idle, so the first visit can take about a minute to wake it.
+A small Django store with Stripe Checkout, a payment webhook that creates each order
+exactly once, and an admin for working orders.
 
-**Status:** Milestone 5. Paying creates an order through a signed, idempotent Stripe
-webhook that cannot double-process a replayed event or oversell the last unit, and staff
-work orders through a guarded admin. Demo polish is next.
+**Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**
+
+**Checkout is live in Stripe test mode: pay with card 4242 4242 4242 4242**, any future
+expiry date and any CVC. No real money moves and nothing ships. The site runs on a free
+instance that sleeps when idle, so the first visit can take about a minute to wake it.
+
+![The shopfront home page: a hero reading "Things made to last." beside illustrated product cards, under a banner giving the Stripe test card](docs/screenshots/home.png)
+
+**Status:** All six milestones are done. Paying creates an order through a signed,
+idempotent Stripe webhook that cannot double-process a replayed event or oversell the
+last unit, and staff work orders through a guarded admin.
 
 ## Why this exists
 
@@ -17,6 +25,32 @@ when Stripe delivers the same event twice.** See [Milestones](#milestones).
 
 Payments run in **Stripe test mode only**. The app never handles card details — checkout
 happens on Stripe's hosted page.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/product.png" alt="Product page for the enamel kettle: illustration, price, stock count and an add-to-cart form"></td>
+    <td width="50%"><img src="docs/screenshots/cart.png" alt="Cart with three items beside an order summary, a Checkout button and the test-card note"></td>
+  </tr>
+  <tr>
+    <td><b>Product page.</b> Prices come from the database in öre on every render.</td>
+    <td><b>Cart.</b> Reconciled against the catalog before it's shown, then again at checkout.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/checkout.png" alt="Stripe's hosted Checkout page in sandbox mode, listing the cart's items and total in SEK"></td>
+    <td><img src="docs/screenshots/admin-orders.png" alt="Django admin order list with paid, shipped, refunded and needs-refund orders and status filters"></td>
+  </tr>
+  <tr>
+    <td><b>Stripe Checkout (sandbox).</b> Card details never reach the app.</td>
+    <td><b>Order admin.</b> Read-only orders, moved forward only by guarded actions.</td>
+  </tr>
+</table>
+
+<p align="center"><img src="docs/screenshots/mobile-home.png" width="300" alt="The home page at phone width"></p>
+
+Screenshots were taken from a local instance with demo orders, using headless Chrome with
+reduced motion so no animation is caught mid-frame.
 
 ## How it fits together
 
@@ -168,7 +202,7 @@ and skip on SQLite.
 | 3 | Stripe Checkout session | ✅ |
 | 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | ✅ |
 | 5 | Admin: order management, shipping actions, event audit | ✅ |
-| 6 | Demo polish: screenshots, seeded data, test-card instructions | |
+| 6 | Demo polish: screenshots, seeded data, test-card instructions | ✅ |
 
 ## Design decisions
 
