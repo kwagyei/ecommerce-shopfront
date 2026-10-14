@@ -53,3 +53,14 @@ def create_checkout_session(lines: list[CartLine], success_url: str, cancel_url:
             "cancel_url": cancel_url,
         }
     )
+
+
+def retrieve_checkout_session(session_id: str):
+    """The session as Stripe holds it now, with each line's product metadata expanded.
+
+    Fetched rather than read from the event body so fulfilment always works from what
+    Stripe actually charged, with the line items the event payload doesn't include.
+    """
+    return stripe_client().v1.checkout.sessions.retrieve(
+        session_id, params={"expand": ["line_items.data.price.product"]}
+    )

@@ -1,13 +1,15 @@
 import logging
 
 import stripe
+from django.conf import settings
 from django.contrib import messages
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from core import payments
+from core import fulfilment, payments
 from core.cart import Cart
 from core.models import Category, Product
 
@@ -147,6 +149,31 @@ def checkout_success(request):
 def checkout_cancel(request):
     messages.info(request, "Checkout cancelled. Your cart is as you left it.")
     return redirect("catalog:cart")
+
+
+@csrf_exempt  # Stripe can't send a CSRF token; the signature check below replaces it.
+@require_POST
+def stripe_webhook(request):
+    """Stripe calls this after a payment. 2xx tells Stripe to stop retrying, so a 2xx
+    only goes out once the event is safely recorded (or known to be a duplicate)."""
+    secret = settings.STRIPE_WEBHOOK_SECRET
+    if not secret:
+        logger.error("STRIPE_WEBHOOK_SECRET is not set; refusing webhook")
+        return HttpResponse(status=500)
+    try:
+        event = stripe.Webhook.construct_event(
+            request.body, request.headers.get("Stripe-Signature"), secret
+        )
+    except (ValueError, stripe.SignatureVerificationError):
+        return HttpResponse(status=400)
+
+    try:
+        outcome = fulfilment.handle_event(event)
+    except stripe.StripeError:
+        logger.exception("Could not process Stripe event %s; Stripe will retry", event.id)
+        return HttpResponse(status=500)
+    logger.info("Stripe event %s (%s): %s", event.id, event.type, outcome)
+    return HttpResponse(status=200)
 
 
 def healthz(request):
