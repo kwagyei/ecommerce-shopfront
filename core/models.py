@@ -89,3 +89,74 @@ class Product(models.Model):
     @property
     def is_in_stock(self) -> bool:
         return self.stock > 0
+
+
+class Order(models.Model):
+    """A paid Checkout Session. Created only by the Stripe webhook, never by a page view.
+
+    Unique on the session id: Stripe can describe one payment in more than one event,
+    and however many arrive, one payment is one order.
+    """
+
+    class Status(models.TextChoices):
+        PAID = "paid", "Paid"
+        NEEDS_REFUND = "needs_refund", "Needs refund (not enough stock)"
+        SHIPPED = "shipped", "Shipped"
+
+    stripe_checkout_session_id = models.CharField(max_length=255, unique=True)
+    email = models.EmailField(blank=True)
+    amount_total_minor = models.PositiveIntegerField(help_text="What Stripe charged, in öre.")
+    currency = models.CharField(max_length=3)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PAID)
+    created_at = models.DateTimeField(auto_now_add=True)
+    shipped_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"Order {self.pk} ({self.get_status_display()})"
+
+    @property
+    def amount_total(self) -> Decimal:
+        return (Decimal(self.amount_total_minor) / 100).quantize(Decimal("0.01"))
+
+
+class OrderItem(models.Model):
+    """One paid line. Name and price are copied at purchase time, so editing or deleting
+    the product later never rewrites what a customer was charged."""
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    product_name = models.CharField(max_length=140)
+    unit_price_minor = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
+
+    def __str__(self) -> str:
+        return f"{self.quantity} × {self.product_name}"
+
+    @property
+    def line_total_minor(self) -> int:
+        return self.unit_price_minor * self.quantity
+
+
+class StripeEvent(models.Model):
+    """Every webhook event received, keyed by Stripe's event id.
+
+    The unique constraint is the idempotency guarantee: a replayed event fails to
+    insert, so it can never be processed twice, even when two deliveries race.
+    """
+
+    event_id = models.CharField(max_length=255, unique=True)
+    type = models.CharField(max_length=100)
+    received_at = models.DateTimeField(auto_now_add=True)
+    order = models.ForeignKey(
+        Order, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+    )
+
+    class Meta:
+        ordering = ["-received_at"]
+
+    def __str__(self) -> str:
+        return f"{self.type} ({self.event_id})"

@@ -111,6 +111,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Stripe, test mode only. Hosted Checkout is a server-side redirect, so only the secret
 # key is needed. Empty disables checkout instead of breaking the cart.
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+# Signs webhook deliveries (whsec_...): from `stripe listen` locally, the dashboard endpoint
+# in production. Without it the webhook refuses every request rather than trusting them.
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 # Render terminates TLS at its proxy, so Django needs the header to know a request was HTTPS.
 if not DEBUG:

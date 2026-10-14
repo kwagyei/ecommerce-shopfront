@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from core.models import Category, Product
+from core.models import Category, Order, OrderItem, Product, StripeEvent
 
 
 @admin.register(Category)
@@ -27,3 +27,44 @@ class ProductAdmin(admin.ModelAdmin):
     @admin.display(description="price", ordering="price_minor")
     def price_display(self, product: Product) -> str:
         return f"{product.price:.2f} kr"
+
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    can_delete = False
+    readonly_fields = ["product", "product_name", "unit_price_minor", "quantity"]
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    """Read-only for now: orders are created by the Stripe webhook alone. Status filters
+    and the mark-as-shipped action arrive in milestone 5."""
+
+    list_display = ["pk", "created_at", "email", "total_display", "status"]
+    list_filter = ["status"]
+    search_fields = ["email", "stripe_checkout_session_id"]
+    inlines = [OrderItemInline]
+
+    @admin.display(description="total", ordering="amount_total_minor")
+    def total_display(self, order: Order) -> str:
+        return f"{order.amount_total:.2f} {order.currency.upper()}"
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False
+
+
+@admin.register(StripeEvent)
+class StripeEventAdmin(admin.ModelAdmin):
+    list_display = ["event_id", "type", "received_at", "order"]
+    list_filter = ["type"]
+    search_fields = ["event_id"]
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False

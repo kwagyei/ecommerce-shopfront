@@ -20,3 +20,7 @@ services:
       # Stripe TEST key (sk_test_...). Set in the dashboard; empty disables checkout.
       - key: STRIPE_SECRET_KEY
         sync: false
+      # whsec_... from the dashboard webhook endpoint for /stripe/webhook/. Without it the
+      # endpoint refuses every delivery and Stripe keeps retrying until it's set.
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

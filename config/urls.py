@@ -5,6 +5,7 @@ from core import views
 
 urlpatterns = [
     path("healthz", views.healthz, name="healthz"),
+    path("stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
 ]
