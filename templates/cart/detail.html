@@ -1,44 +1,60 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Cart · shopfront{% endblock %}
 {% block content %}
   <h1>Your cart</h1>
   {% if cart %}
-    <table class="cart">
-      <thead><tr><th>Item</th><th>Price</th><th>Quantity</th><th>Total</th><th></th></tr></thead>
-      <tbody>
-        {% for line in cart.lines %}
-          <tr>
-            <td><a href="{{ line.product.get_absolute_url }}">{{ line.product.name }}</a></td>
-            <td>{{ line.product.price }} kr</td>
-            <td>
-              <form method="post" action="{% url 'catalog:cart_update' line.product.slug %}">
-                {% csrf_token %}
-                <input type="number" name="quantity" value="{{ line.quantity }}" min="0"
-                       max="{{ line.product.stock }}" aria-label="Quantity for {{ line.product.name }}">
-                <button type="submit">Update</button>
-              </form>
-            </td>
-            <td>{{ line.total }} kr</td>
-            <td>
-              <form method="post" action="{% url 'catalog:cart_remove' line.product.slug %}">
-                {% csrf_token %}
-                <button type="submit" class="link">Remove</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr><td colspan="3">Total</td><td class="price big">{{ cart.total }} kr</td><td></td></tr>
-      </tfoot>
-    </table>
-    <form method="post" action="{% url 'catalog:checkout' %}" class="checkout">
-      {% csrf_token %}
-      <button type="submit">Checkout</button>
-    </form>
-    <p class="test-card">Payments run in Stripe test mode. Pay with card
-      <strong>4242 4242 4242 4242</strong>, any future expiry date and any CVC.</p>
+    <div class="cart-layout">
+      <div class="panel">
+        <table class="cart">
+          <thead><tr><th>Item</th><th class="unit num">Price</th><th>Quantity</th><th class="num">Total</th></tr></thead>
+          <tbody>
+            {% for line in cart.lines %}
+              <tr style="--i: {{ forloop.counter0 }}">
+                <td>
+                  <div class="item">
+                    {% if line.product.image %}<img src="{% static line.product.image %}" alt="" width="72" height="48">{% endif %}
+                    <div>
+                      <a href="{{ line.product.get_absolute_url }}">{{ line.product.name }}</a>
+                      <form method="post" action="{% url 'catalog:cart_remove' line.product.slug %}">
+                        {% csrf_token %}
+                        <button type="submit" class="link">Remove</button>
+                      </form>
+                    </div>
+                  </div>
+                </td>
+                <td class="unit num">{{ line.product.price }} kr</td>
+                <td>
+                  <form method="post" action="{% url 'catalog:cart_update' line.product.slug %}">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="{{ line.quantity }}" min="0"
+                           max="{{ line.product.stock }}" aria-label="Quantity for {{ line.product.name }}">
+                    <button type="submit" class="link">Update</button>
+                  </form>
+                </td>
+                <td class="num">{{ line.total }} kr</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="panel summary" aria-label="Order summary">
+        <h2>Summary</h2>
+        <div class="row"><span>Items</span><span>{{ cart|length }}</span></div>
+        <div class="total"><span>Total</span><span class="price big">{{ cart.total }} kr</span></div>
+        <form method="post" action="{% url 'catalog:checkout' %}" class="checkout">
+          {% csrf_token %}
+          <button type="submit" class="accent">Checkout <span class="arrow" aria-hidden="true">→</span></button>
+        </form>
+        <p class="test-card">Test mode: pay with card <strong>4242 4242 4242 4242</strong>,
+          any future expiry date and any CVC.</p>
+      </aside>
+    </div>
   {% else %}
-    <p class="empty">Your cart is empty. <a href="{% url 'catalog:product_list' %}">Browse the shop</a>.</p>
+    <div class="panel empty-cart">
+      <p class="empty">Your cart is empty.</p>
+      <a class="button" href="{% url 'catalog:product_list' %}">Browse the shop <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
   {% endif %}
 {% endblock %}

@@ -76,3 +76,19 @@ def test_every_page_shows_the_category_nav(client):
         reverse("catalog:product", args=["enamel-kettle"]),
     ]:
         assert b'href="/category/kitchen/"' in client.get(url).content, url
+
+
+def test_every_page_says_checkout_is_in_test_mode_and_names_the_test_card(client):
+    """The demo is public: a visitor must never think a real payment is being taken."""
+    make_category(name="Kitchen", slug="kitchen")
+    make_product(slug="enamel-kettle")
+    for url in [
+        reverse("catalog:product_list"),
+        reverse("catalog:category", args=["kitchen"]),
+        reverse("catalog:product", args=["enamel-kettle"]),
+        reverse("catalog:cart"),
+        reverse("catalog:checkout_success"),
+    ]:
+        content = client.get(url).content
+        assert b"Stripe test mode" in content, url
+        assert b"4242 4242 4242 4242" in content, url

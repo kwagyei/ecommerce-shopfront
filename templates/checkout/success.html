@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Thank you · shopfront{% endblock %}
 {% block content %}
-  <h1>Thank you</h1>
-  <p>Your payment went through. Stripe emails a receipt to the address you gave at checkout.</p>
-  <p>This is a demo store running in Stripe test mode: no money moved and nothing will ship.</p>
-  <p><a href="{% url 'catalog:product_list' %}">Back to the shop</a></p>
+  <div class="panel confirm">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="m7.5 12.5 3 3 6-6.5"/></svg>
+    <h1>Thank you</h1>
+    <p>Your payment went through. Stripe emails a receipt to the address you gave at checkout.</p>
+    <p>This is a demo store in Stripe test mode: no money moved and nothing will ship.</p>
+    <p><a class="button" href="{% url 'catalog:product_list' %}">Back to the shop</a></p>
+  </div>
 {% endblock %}

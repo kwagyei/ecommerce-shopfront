@@ -172,6 +172,14 @@ the redirect, and anyone can type the success URL. So the success page only clea
 cart, and only for the Checkout Session that browser started. Creating orders is the
 webhook's job, because Stripe retries it until it lands.
 
+**The look costs nothing at runtime.** No web fonts: headings use a serif stack (Iowan
+Old Style, Charter, Palatino) already installed on macOS, iOS and Windows. The product
+illustrations are hand-written SVGs of a few kilobytes each. Motion is CSS only: cards rise
+in and lift on hover, messages slide in, and same-site navigations crossfade through the
+browser's View Transitions, with each product image morphing from the grid into its own
+page. Browsers without View Transitions navigate normally. Under `prefers-reduced-motion`
+every animation is switched off, though no state change depends on one.
+
 **Plain forms, not HTMX.** The cart works with JavaScript disabled and depends on no
 third-party script at runtime. HTMX can be layered on later as enhancement; starting with
 it would have meant a CDN dependency for a demo that doesn't need one.

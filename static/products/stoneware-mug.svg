@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Stoneware mug">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/>
-  </linearGradient></defs>
-  <rect width="600" height="400" fill="url(#g)"/>
-  <g opacity="0.15" fill="none" stroke="#ffffff" stroke-width="2">
-    <circle cx="316" cy="196" r="116"/>
-    <circle cx="316" cy="196" r="162"/>
-    <circle cx="316" cy="196" r="208"/>
-  </g>
+  <rect width="600" height="400" fill="#F3ECDF"/>
+  <circle cx="300" cy="205" r="150" fill="#EBCDB8"/>
+  <ellipse cx="300" cy="335" rx="150" ry="16" fill="#2A2420" opacity="0.12"/>
+
+  <path d="M370 196 C 430 192, 432 290, 366 288" fill="none" stroke="#2A2420" stroke-width="22" stroke-linecap="round"/>
+  <path d="M370 196 C 430 192, 432 290, 366 288" fill="none" stroke="#9A6B4F" stroke-width="12" stroke-linecap="round"/>
+  <path d="M220 150 L 380 150 L 372 318 C 370 330, 230 330, 228 318 Z" fill="#9A6B4F" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M222 150 L 378 150 L 376 196 C 360 214, 350 186, 334 212 C 320 236, 306 200, 292 218 C 276 238, 262 200, 248 222 C 238 236, 228 218, 224 206 Z" fill="#4F8A8B"/>
+  <path d="M220 150 L 380 150 L 372 318 C 370 330, 230 330, 228 318 Z" fill="none" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="300" cy="150" rx="80" ry="14" fill="#3F7172" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
 </svg>
