@@ -5,9 +5,9 @@ A small Django store with Stripe test-mode checkout and an admin panel.
 **Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**. It runs on a
 free instance that sleeps when idle, so the first visit can take about a minute to wake it.
 
-**Status:** Milestone 4. Paying creates an order through a signed, idempotent Stripe
-webhook that cannot double-process a replayed event or oversell the last unit. Order admin
-is next.
+**Status:** Milestone 5. Paying creates an order through a signed, idempotent Stripe
+webhook that cannot double-process a replayed event or oversell the last unit, and staff
+work orders through a guarded admin. Demo polish is next.
 
 ## Why this exists
 
@@ -167,7 +167,7 @@ and skip on SQLite.
 | 2 | Session cart: add, update, remove, server-side totals | ✅ |
 | 3 | Stripe Checkout session | ✅ |
 | 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | ✅ |
-| 5 | Admin: order management, shipping actions, event audit | |
+| 5 | Admin: order management, shipping actions, event audit | ✅ |
 | 6 | Demo polish: screenshots, seeded data, test-card instructions | |
 
 ## Design decisions
@@ -227,6 +227,23 @@ every animation is switched off, though no state change depends on one.
 third-party script at runtime. HTMX can be layered on later as enhancement; starting with
 it would have meant a CDN dependency for a demo that doesn't need one.
 
+**Staff can't edit an order, only move it forward.** Orders come from the webhook alone,
+so the admin shows them read-only, with their line items and the Stripe events behind
+them. Two actions change status: *mark as shipped* (paid → shipped) and *mark as refunded*
+(needs refund → refunded, after refunding in Stripe). Each is a single conditional
+`UPDATE ... WHERE status = ...`, so two staff acting at once can't ship an order twice, and
+a mis-click can't ship one that is waiting for a refund; anything in the wrong state is
+skipped and counted. The actions need the change-order permission, so view-only staff can
+look but not act.
+
+**Stock is adjusted, never overwritten.** The admin used to edit stock as an absolute
+number: open a product at 5, let an order take 2, save the form, and stock went back to 5,
+undoing the sale. Stock on an existing product is now read-only. Staff enter an adjustment
+(+10 for a delivery, -1 for a breakage), applied as `stock = stock + n` against whatever
+the row holds at save time and refused if it would go below zero. The rest of the form
+saves only the fields that changed, so it never writes stale stock back either. There are
+regression tests for both.
+
 **Withdrawn products return 404, not 403.** A 403 confirms the product exists; a 404
 doesn't leak that an item was ever listed.
 
@@ -248,7 +265,8 @@ promptly went missing from the product detail page. There's a regression test fo
 - **Images ship with the code.** Adding a product image means a commit and a deploy, the
   trade-off for not paying for object storage.
 - **Refunds are manual.** An order flagged *needs refund* (paid for stock that sold out
-  meanwhile) must be refunded from the Stripe dashboard. Automating that is out of scope.
+  meanwhile) is refunded in the Stripe dashboard, then marked refunded in the admin.
+  Issuing the refund through the API is out of scope.
 - **Only immediate payment methods.** The webhook fulfils `checkout.session.completed`
   when the session is already paid (cards, wallets). Delayed methods that confirm later
   via `checkout.session.async_payment_succeeded` aren't handled.
