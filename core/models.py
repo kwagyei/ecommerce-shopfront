@@ -4,6 +4,7 @@ from django.contrib.staticfiles import finders
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 
 def validate_static_path(path: str) -> None:
@@ -91,6 +92,19 @@ class Product(models.Model):
         return self.stock > 0
 
 
+class OrderQuerySet(models.QuerySet):
+    """Status changes as single conditional UPDATEs. The WHERE clause is the guard, so
+    two staff acting at once can't ship an order twice or ship one awaiting a refund."""
+
+    def mark_shipped(self) -> int:
+        return self.filter(status=Order.Status.PAID).update(
+            status=Order.Status.SHIPPED, shipped_at=timezone.now()
+        )
+
+    def mark_refunded(self) -> int:
+        return self.filter(status=Order.Status.NEEDS_REFUND).update(status=Order.Status.REFUNDED)
+
+
 class Order(models.Model):
     """A paid Checkout Session. Created only by the Stripe webhook, never by a page view.
 
@@ -102,6 +116,7 @@ class Order(models.Model):
         PAID = "paid", "Paid"
         NEEDS_REFUND = "needs_refund", "Needs refund (not enough stock)"
         SHIPPED = "shipped", "Shipped"
+        REFUNDED = "refunded", "Refunded"
 
     stripe_checkout_session_id = models.CharField(max_length=255, unique=True)
     email = models.EmailField(blank=True)
@@ -110,6 +125,8 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PAID)
     created_at = models.DateTimeField(auto_now_add=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
+
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]

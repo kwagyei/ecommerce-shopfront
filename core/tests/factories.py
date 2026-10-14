@@ -25,3 +25,12 @@ def make_product(category: Category | None = None, **kwargs) -> Product:
         "is_active": True,
     }
     return Product.objects.create(category=category or default_category(), **{**defaults, **kwargs})
+
+
+def make_order(status: str = "paid", session_id: str = "cs_test_1", **kwargs):
+    from core.models import Order
+
+    defaults = {"email": "buyer@example.com", "amount_total_minor": 44900, "currency": "sek"}
+    return Order.objects.create(
+        stripe_checkout_session_id=session_id, status=status, **{**defaults, **kwargs}
+    )
