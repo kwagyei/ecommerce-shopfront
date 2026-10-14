@@ -37,6 +37,13 @@ jobs:
       - name: Formatting
         run: ruff format --check .
 
+      # Builds the hashed, compressed static files exactly as the deploy does, which
+      # also gives Whitenoise the directory the tests otherwise warn about.
+      - name: Collect static files
+        env:
+          DJANGO_SECRET_KEY: ci-only-value-not-used-anywhere-real-0123456789
+        run: python manage.py collectstatic --no-input
+
       - name: Tests (SQLite)
         run: pytest
 
