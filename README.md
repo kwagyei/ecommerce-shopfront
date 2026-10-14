@@ -5,8 +5,9 @@ A small Django store with Stripe test-mode checkout and an admin panel.
 **Live demo: [shopfront-da2o.onrender.com](https://shopfront-da2o.onrender.com)**. It runs on a
 free instance that sleeps when idle, so the first visit can take about a minute to wake it.
 
-**Status:** Milestone 3 — checkout through Stripe's hosted page. The webhook that turns
-payments into orders is next.
+**Status:** Milestone 4. Paying creates an order through a signed, idempotent Stripe
+webhook that cannot double-process a replayed event or oversell the last unit. Order admin
+is next.
 
 ## Why this exists
 
@@ -34,7 +35,7 @@ flowchart LR
     end
 
     subgraph neon["Neon · free Postgres"]
-        db[("Catalog, sessions<br/>orders from milestone 4")]
+        db[("Catalog, sessions,<br/>orders, Stripe event log")]
     end
 
     subgraph stripe["Stripe · test mode"]
@@ -52,12 +53,12 @@ flowchart LR
     app -. "303 redirect" .-> hosted
     customer -- "card details go to Stripe only" --> hosted
     hosted -. "redirect back to success or cancel" .-> customer
-    api -. "signed webhook event (milestone 4)" .-> app
+    api -- "signed webhook event<br/>(retried until acknowledged)" --> app
 ```
 
-Secrets (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STRIPE_SECRET_KEY`) live only in Render's
-environment and a local, gitignored `.env`. Dashed lines are redirects or, for the
-webhook, not yet built.
+Secrets (`DJANGO_SECRET_KEY`, `DATABASE_URL`, `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`) live only in Render's environment and a local, gitignored `.env`.
+Dashed lines are browser redirects.
 
 ### A purchase, step by step
 
@@ -81,16 +82,48 @@ sequenceDiagram
         S-->>C: Redirect to /checkout/success/?session_id=…
         C->>A: GET success page
         A-->>C: Clear the cart if the session id is this browser's own
-        Note over S,A: Milestone 4
+        Note over S,A: Later, independently of the browser
         S->>A: checkout.session.completed (signed, retried until acknowledged)
         A->>D: Verify signature, record the event id once, create the order, decrement stock
     end
 ```
 
 The success redirect is not trusted as proof of payment: a customer can close the tab
-before it happens, and anyone can type the URL. Orders come only from the signed webhook,
-which Stripe retries, and the stored event id stops a replayed event from creating a
-second order.
+before it happens, and anyone can type the URL. Orders come only from the signed webhook.
+
+## How an order is created exactly once
+
+Stripe delivers webhooks *at least* once: it retries until it gets a 2xx, and the same
+payment can be described by more than one event. The handler
+([`core/fulfilment.py`](core/fulfilment.py)) makes three guarantees, each pinned by tests:
+
+1. **A replayed event changes nothing.** The Stripe `event.id` goes into a column with a
+   unique constraint, in the same transaction as the order. A second delivery fails that
+   insert and is acknowledged with a 200. The order itself is also unique on the Checkout
+   Session id, so two *different* events for one payment still make one order.
+2. **Nothing is half-done.** Recording the event, creating the order and decrementing
+   stock commit together or not at all. If anything fails, the endpoint answers 500,
+   Stripe retries, and the retry starts from a clean slate. If the event were recorded
+   first, a crash before the order would make the retry look like a duplicate, and the
+   order would be lost.
+3. **Stock never goes negative.** Stock isn't reserved during checkout, so two customers
+   can pay for the last unit. Product rows are locked with `SELECT ... FOR UPDATE`, in
+   primary-key order so concurrent orders cannot deadlock, before stock is checked. A paid
+   order that can't be filled is kept and flagged **needs refund**, never partly filled.
+
+Other details: the signature is verified against the raw body, with Stripe's 5-minute
+timestamp tolerance against captured-request replays. The Checkout Session is re-fetched
+from Stripe *outside* the transaction, so no row lock is held across a network call.
+Sessions the shop didn't create (no `product_id` on their lines) are logged and ignored
+rather than crashing and being retried for days. Order lines copy the product name and
+price, so later catalog edits never rewrite what a customer paid.
+
+The races are tested for real: CI runs the suite a second time against Postgres, where two
+threads behind a barrier pay for the last unit at the same moment, and deliver the same
+event at the same moment. SQLite serialises all writes, so those tests skip there. It was
+also checked end to end: a sandbox payment through the Stripe CLI created one order, and
+`stripe events resend` of the same event was acknowledged without a second order or a
+second stock decrement.
 
 ## Running it locally
 
@@ -105,6 +138,14 @@ python manage.py runserver
 
 The app uses SQLite locally and Postgres wherever `DATABASE_URL` is set.
 
+To receive webhooks locally, forward them with the [Stripe CLI](https://docs.stripe.com/stripe-cli),
+and start the server with the signing secret it prints:
+
+```bash
+stripe listen --forward-to localhost:8000/stripe/webhook/ --events checkout.session.completed
+STRIPE_WEBHOOK_SECRET="$(stripe listen --print-secret)" python manage.py runserver
+```
+
 ### Tests and linting
 
 ```bash
@@ -113,7 +154,9 @@ ruff check .
 ruff format --check .
 ```
 
-All three run in CI on every pull request, along with Django's `check --deploy`.
+All three run in CI on every pull request, along with Django's `check --deploy`. CI runs
+the tests twice, on SQLite and on Postgres; the concurrency tests need Postgres row locks
+and skip on SQLite.
 
 ## Milestones
 
@@ -123,7 +166,7 @@ All three run in CI on every pull request, along with Django's `check --deploy`.
 | 1 | Catalog: products, categories, admin, seed data | ✅ |
 | 2 | Session cart: add, update, remove, server-side totals | ✅ |
 | 3 | Stripe Checkout session | ✅ |
-| 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | |
+| 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | ✅ |
 | 5 | Admin: order management, shipping actions, event audit | |
 | 6 | Demo polish: screenshots, seeded data, test-card instructions | |
 
@@ -204,8 +247,11 @@ promptly went missing from the product detail page. There's a regression test fo
   empty catalog, products added to the seed list later have to be created in the admin.
 - **Images ship with the code.** Adding a product image means a commit and a deploy, the
   trade-off for not paying for object storage.
-- **Paying doesn't create an order yet.** Checkout takes a test payment, but orders and
-  stock decrements come from the webhook in milestone 4.
+- **Refunds are manual.** An order flagged *needs refund* (paid for stock that sold out
+  meanwhile) must be refunded from the Stripe dashboard. Automating that is out of scope.
+- **Only immediate payment methods.** The webhook fulfils `checkout.session.completed`
+  when the session is already paid (cards, wallets). Delayed methods that confirm later
+  via `checkout.session.async_payment_succeeded` aren't handled.
 
 ## Deliberately out of scope
 
