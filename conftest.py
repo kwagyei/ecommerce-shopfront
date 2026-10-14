@@ -10,6 +10,8 @@ def _test_environment(settings):
     after collectstatic. Both are switched off here rather than weakened in settings.
     """
     settings.SECURE_SSL_REDIRECT = False
+    # Production hashing is slow on purpose; tests create users and don't need it.
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
     settings.STORAGES = {
         **settings.STORAGES,
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
