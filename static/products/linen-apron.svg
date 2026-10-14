@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Linen apron">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#9a3412"/><stop offset="100%" stop-color="#7c2d12"/>
-  </linearGradient></defs>
-  <rect width="600" height="400" fill="url(#g)"/>
-  <g opacity="0.15" fill="none" stroke="#ffffff" stroke-width="2">
-    <circle cx="368" cy="208" r="98"/>
-    <circle cx="368" cy="208" r="144"/>
-    <circle cx="368" cy="208" r="190"/>
-  </g>
+  <rect width="600" height="400" fill="#F3ECDF"/>
+  <circle cx="300" cy="205" r="150" fill="#EBCDB8"/>
+  <ellipse cx="300" cy="335" rx="150" ry="16" fill="#2A2420" opacity="0.12"/>
+
+  <path d="M262 92 C 250 120, 248 140, 250 156 M338 92 C 350 120, 352 140, 350 156" fill="none" stroke="#9C7A55" stroke-width="7" stroke-linecap="round"/>
+  <path d="M252 156 L 348 156 L 352 196 C 380 200, 404 210, 410 222 L 400 330 L 200 330 L 190 222 C 196 210, 220 200, 248 196 Z" fill="#D9C7A6" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M190 222 C 150 226, 128 240, 118 258 M410 222 C 450 226, 472 240, 482 258" fill="none" stroke="#9C7A55" stroke-width="7" stroke-linecap="round"/>
+  <rect x="246" y="246" width="108" height="56" rx="6" fill="#CDB892" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M258 170 L 342 170 M300 246 L 300 302" fill="none" stroke="#2A2420" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.6"/>
+  <path d="M208 316 L 392 316" fill="none" stroke="#2A2420" stroke-width="2.5" stroke-dasharray="6 6" opacity="0.6"/>
+
 </svg>

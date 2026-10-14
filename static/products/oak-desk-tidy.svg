@@ -1,11 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Oak desk tidy">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#9a3412"/><stop offset="100%" stop-color="#7c2d12"/>
-  </linearGradient></defs>
-  <rect width="600" height="400" fill="url(#g)"/>
-  <g opacity="0.15" fill="none" stroke="#ffffff" stroke-width="2">
-    <circle cx="365" cy="185" r="85"/>
-    <circle cx="365" cy="185" r="131"/>
-    <circle cx="365" cy="185" r="177"/>
-  </g>
+  <rect width="600" height="400" fill="#F3ECDF"/>
+  <circle cx="300" cy="205" r="150" fill="#E5D6B8"/>
+  <ellipse cx="300" cy="328" rx="160" ry="14" fill="#2A2420" opacity="0.12"/>
+
+  <path d="M250 104 L 268 230" fill="none" stroke="#2A2420" stroke-width="14" stroke-linecap="round"/>
+  <path d="M250 104 L 268 230" fill="none" stroke="#E0B341" stroke-width="7" stroke-linecap="round"/>
+  <path d="M296 92 L 300 230" fill="none" stroke="#2A2420" stroke-width="14" stroke-linecap="round"/>
+  <path d="M296 92 L 300 230" fill="none" stroke="#2F5D47" stroke-width="7" stroke-linecap="round"/>
+  <path d="M342 120 L 330 230" fill="none" stroke="#2A2420" stroke-width="14" stroke-linecap="round"/>
+  <path d="M342 120 L 330 230" fill="none" stroke="#B5523B" stroke-width="7" stroke-linecap="round"/>
+  <rect x="160" y="210" width="280" height="110" rx="12" fill="#C99A63" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="160" y="210" width="280" height="22" rx="10" fill="#D8AE7B" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M190 252 C 230 246, 260 262, 300 256 M200 286 C 250 280, 330 294, 410 284 M330 250 C 360 246, 390 254, 420 250" fill="none" stroke="#9E7240" stroke-width="3" stroke-linecap="round"/>
+  <rect x="384" y="236" width="40" height="70" rx="6" fill="none" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
 </svg>

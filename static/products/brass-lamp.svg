@@ -1,11 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Brass lamp">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#581c87"/>
-  </linearGradient></defs>
-  <rect width="600" height="400" fill="url(#g)"/>
-  <g opacity="0.15" fill="none" stroke="#ffffff" stroke-width="2">
-    <circle cx="265" cy="185" r="75"/>
-    <circle cx="265" cy="185" r="121"/>
-    <circle cx="265" cy="185" r="167"/>
-  </g>
+  <rect width="600" height="400" fill="#F3ECDF"/>
+  <circle cx="300" cy="205" r="150" fill="#E5D6B8"/>
+  <ellipse cx="250" cy="322" rx="90" ry="12" fill="#2A2420" opacity="0.12"/>
+
+  <path d="M232 214 L 368 274 L 486 230" fill="#F6E7A6" opacity="0"/>
+  <path d="M196 310 L 286 310" fill="none" stroke="#2A2420" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="240" cy="308" rx="56" ry="14" fill="#C9A15A" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M240 300 L 290 180 L 380 130" fill="none" stroke="#2A2420" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M240 300 L 290 180 L 380 130" fill="none" stroke="#D4AF5C" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="290" cy="180" r="11" fill="#B8913F" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M362 112 L 420 98 L 452 182 L 360 196 Z" fill="#C9A15A" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M376 194 C 390 214, 434 208, 446 184" fill="#F6E7A6" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="380" cy="130" r="10" fill="#B8913F" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
 </svg>

@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400" role="img" aria-label="Canvas rucksack">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#0f766e"/><stop offset="100%" stop-color="#134e4a"/>
-  </linearGradient></defs>
-  <rect width="600" height="400" fill="url(#g)"/>
-  <g opacity="0.15" fill="none" stroke="#ffffff" stroke-width="2">
-    <circle cx="232" cy="212" r="92"/>
-    <circle cx="232" cy="212" r="138"/>
-    <circle cx="232" cy="212" r="184"/>
-  </g>
+  <rect width="600" height="400" fill="#F3ECDF"/>
+  <circle cx="300" cy="205" r="150" fill="#CBD8C4"/>
+  <ellipse cx="300" cy="335" rx="150" ry="16" fill="#2A2420" opacity="0.12"/>
+
+  <path d="M270 102 C 270 78, 330 78, 330 102" fill="none" stroke="#7A4E2D" stroke-width="10" stroke-linecap="round"/>
+  <path d="M206 160 C 206 120, 236 104, 300 104 C 364 104, 394 120, 394 160 L 400 312 C 400 328, 200 328, 200 312 Z" fill="#6F7148" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M212 300 L 388 300 L 390 314 C 388 326, 212 326, 210 314 Z" fill="#7A4E2D" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M210 160 C 210 128, 240 116, 300 116 C 360 116, 390 128, 390 160 L 386 222 C 340 234, 260 234, 214 222 Z" fill="#5C5E3B" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M262 226 L 262 262 M338 226 L 338 262" fill="none" stroke="#7A4E2D" stroke-width="12" stroke-linecap="round"/>
+  <rect x="252" y="250" width="20" height="18" rx="3" fill="#C9A15A" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="328" y="250" width="20" height="18" rx="3" fill="#C9A15A" stroke="#2A2420" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
 </svg>
