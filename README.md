@@ -13,15 +13,14 @@ instance that sleeps when idle, so the first visit can take about a minute to wa
 
 ![The shopfront home page: a hero reading "Things made to last." beside illustrated product cards, under a banner giving the Stripe test card](docs/screenshots/home.png)
 
-**Status:** All six milestones are done. Paying creates an order through a signed,
-idempotent Stripe webhook that cannot double-process a replayed event or oversell the
+**What to look at:** paying creates an order through a signed, idempotent Stripe webhook that cannot double-process a replayed event or oversell the
 last unit, and staff work orders through a guarded admin.
 
 ## Why this exists
 
 Most portfolio stores stop at a product grid and a fake checkout. This one is built
 around the part real payment systems get wrong: **webhook handling that stays correct
-when Stripe delivers the same event twice.** See [Milestones](#milestones).
+when Stripe delivers the same event twice.** See [How an order is created exactly once](#how-an-order-is-created-exactly-once).
 
 Payments run in **Stripe test mode only**. The app never handles card details — checkout
 happens on Stripe's hosted page.
@@ -78,7 +77,7 @@ flowchart LR
     end
 
     dev -- "pull request" --> repo
-    repo -- "runs on every PR" --> ci
+    repo -- "runs on every PR and push to main" --> ci
     repo -- "merge to main triggers build.sh:<br/>check, collectstatic, migrate, seed" --> app
 
     customer -- "HTTPS: browse, cart, checkout" --> app
@@ -173,10 +172,14 @@ python manage.py runserver
 The app uses SQLite locally and Postgres wherever `DATABASE_URL` is set.
 
 To receive webhooks locally, forward them with the [Stripe CLI](https://docs.stripe.com/stripe-cli),
-and start the server with the signing secret it prints:
+and start the server with the signing secret it prints. `stripe listen` keeps running, so
+start the server in a second terminal:
 
 ```bash
 stripe listen --forward-to localhost:8000/stripe/webhook/ --events checkout.session.completed
+```
+
+```bash
 STRIPE_WEBHOOK_SECRET="$(stripe listen --print-secret)" python manage.py runserver
 ```
 
@@ -188,21 +191,10 @@ ruff check .
 ruff format --check .
 ```
 
-All three run in CI on every pull request, along with Django's `check --deploy`. CI runs
-the tests twice, on SQLite and on Postgres; the concurrency tests need Postgres row locks
-and skip on SQLite.
-
-## Milestones
-
-| # | Scope | Status |
-|---|---|---|
-| 0 | Skeleton, CI, deployment, health check | ✅ |
-| 1 | Catalog: products, categories, admin, seed data | ✅ |
-| 2 | Session cart: add, update, remove, server-side totals | ✅ |
-| 3 | Stripe Checkout session | ✅ |
-| 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | ✅ |
-| 5 | Admin: order management, shipping actions, event audit | ✅ |
-| 6 | Demo polish: screenshots, seeded data, test-card instructions | ✅ |
+All three run in CI on every pull request and every push to `main`, along with Django's
+`check --deploy`. There are 118 tests, plus 10 concurrency tests that need Postgres row
+locks: CI runs the suite twice, on SQLite and on Postgres 17, and the concurrency tests
+skip on SQLite.
 
 ## Design decisions
 
@@ -292,8 +284,8 @@ promptly went missing from the product detail page. There's a regression test fo
   hours. A demo stays far below both, but sustained bot traffic could pause the database
   until the next month. Nothing is billed: no card is on file.
 - **Stock is not reserved while it sits in a cart.** Two customers can both hold the last
-  unit. The cart re-checks stock when shown, and checkout (milestone 3) will be the point
-  where it is enforced.
+  unit. The cart re-checks stock when it is shown and again at checkout, and if both still
+  pay, the webhook fulfils the first and flags the second **needs refund**.
 - **New demo products don't reach an existing database.** Because `seed` only fills an
   empty catalog, products added to the seed list later have to be created in the admin.
 - **Images ship with the code.** Adding a product image means a commit and a deploy, the
@@ -309,6 +301,18 @@ promptly went missing from the product detail page. There's a regression test fo
 
 User accounts, reviews, wishlists, coupons, search, multi-currency, shipping
 calculations, and email receipts (Stripe sends those). Guest checkout only.
+
+## How it was built
+
+| # | Scope | Status |
+|---|---|---|
+| 0 | Skeleton, CI, deployment, health check | ✅ |
+| 1 | Catalog: products, categories, admin, seed data | ✅ |
+| 2 | Session cart: add, update, remove, server-side totals | ✅ |
+| 3 | Stripe Checkout session | ✅ |
+| 4 | Webhook: signature verification, idempotent fulfilment, stock decrement | ✅ |
+| 5 | Admin: order management, shipping actions, event audit | ✅ |
+| 6 | Demo polish: screenshots, seeded data, test-card instructions | ✅ |
 
 ## Stack
 
