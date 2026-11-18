@@ -11,9 +11,11 @@
           <p class="actions"><a class="button" href="#shop">Shop everything</a></p>
         </div>
         {% if featured %}
+          {# No view-transition-name here: the featured product is also on its shelf, and a #}
+          {# name used twice on one page makes the browser skip the whole transition. #}
           <figure class="offer">
             <a class="plate" href="{{ featured.get_absolute_url }}">
-              {% if featured.image %}<img src="{% static featured.image %}" alt="{{ featured.name }}" width="600" height="400" fetchpriority="high" style="view-transition-name: product-{{ featured.pk }}">{% endif %}
+              {% if featured.image %}<img src="{% static featured.image %}" alt="{{ featured.name }}" width="600" height="400" fetchpriority="high">{% endif %}
             </a>
             <figcaption class="offer-row">
               <a href="{{ featured.get_absolute_url }}">{{ featured.name }}</a>

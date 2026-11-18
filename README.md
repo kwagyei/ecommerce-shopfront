@@ -337,4 +337,8 @@ Django 5 · PostgreSQL (Neon) · Stripe Checkout · Whitenoise · Gunicorn · py
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE).
+- Code: MIT, see [LICENSE](LICENSE).
+- Fonts in `static/fonts/`: SIL Open Font License 1.1, see [`static/fonts/OFL.txt`](static/fonts/OFL.txt).
+- Photographs in `static/products/*.jpg`: the [Unsplash License](https://unsplash.com/license),
+  credited to each photographer in the site footer. The SVG drawings beside them are MIT
+  with the code.
