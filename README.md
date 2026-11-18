@@ -293,6 +293,13 @@ promptly went missing from the product detail page. There's a regression test fo
 - **Stock is not reserved while it sits in a cart.** Two customers can both hold the last
   unit. The cart re-checks stock when it is shown and again at checkout, and if both still
   pay, the webhook fulfils the first and flags the second **needs refund**.
+- **Migrations run before the new version goes live.** `build.sh` runs `migrate` during
+  Render's build, while the previous version is still serving traffic, and the free tier
+  has no step that runs after the switchover. A migration must therefore work with the
+  code already live. The photo migration in PR #12 didn't: it pointed products at `.jpg`
+  files the old version had never collected, and pages with product images returned 500
+  for about a minute and a half until the new version took over. Changes like that now
+  ship in two deploys: the new files or code first, then the migration that uses them.
 - **New demo products don't reach an existing database.** Because `seed` only fills an
   empty catalog, products added to the seed list later have to be created in the admin.
 - **The product photos are stand-ins.** They show similar items, not the ones listed:
