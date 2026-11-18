@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -125,3 +127,22 @@ def test_home_shelves_products_under_their_category(client):
     assert "Brass lamp" in desk_shelf and "Enamel kettle" not in desk_shelf
     kitchen_shelf = kitchen_shelf.split("</section>")[0]
     assert "Enamel kettle" in kitchen_shelf and "Brass lamp" not in kitchen_shelf
+
+
+@pytest.mark.parametrize("page", ["home", "category"])
+def test_no_view_transition_name_is_used_twice_on_a_page(client, page):
+    """A duplicated view-transition-name makes the browser skip the whole transition,
+    so the featured product's hero image must not reuse its shelf image's name."""
+    kitchen = make_category(name="Kitchen", slug="kitchen")
+    desk = make_category(name="Desk", slug="desk")
+    image = "products/enamel-kettle.jpg"
+    # Desk sorts first (grid shelf); Kitchen second (lead-list shelf, first item and rows).
+    make_product(category=desk, slug="lamp", name="Brass lamp", image=image)
+    make_product(category=kitchen, slug="kettle", name="Enamel kettle", image=image)
+    make_product(category=kitchen, slug="mug", name="Stoneware mug", image=image)
+
+    url = reverse("catalog:product_list") if page == "home" else kitchen.get_absolute_url()
+    content = client.get(url).content.decode()
+    names = re.findall(r"view-transition-name:\s*(product-\d+)", content)
+    assert names, "expected product images to carry transition names"
+    assert len(names) == len(set(names)), f"duplicated: {names}"
