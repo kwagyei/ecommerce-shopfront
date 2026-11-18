@@ -6,33 +6,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A small Django demo store with Stripe test-mode checkout.">
   <title>{% block title %}shopfront{% endblock %}</title>
+  <link rel="preload" href="{% static 'fonts/libre-caslon-display-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/hanken-grotesk-latin.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'site.css' %}">
 </head>
 <body>
-  <p class="test-banner">Demo store running in Stripe test mode. Pay with card
-    <strong>4242 4242 4242 4242</strong>, any future date and any CVC.</p>
+  <p class="test-banner"><span class="container">Demo store running in Stripe test mode. Pay with card
+    <strong>4242 4242 4242 4242</strong>, any future date and any CVC.</span></p>
   <header class="site-header">
-    <a class="brand" href="{% url 'catalog:product_list' %}">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c8 0 14-6 14-14C11 5 5 11 5 19Z"/><path d="M5 19 13 11"/></svg>
-      shopfront
-    </a>
-    <nav class="site-nav" aria-label="Categories">
-      {% for category in categories %}
-        <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on" aria-current="page"{% endif %}>{{ category.name }}</a>
-      {% endfor %}
-    </nav>
-    <a class="cart-link" href="{% url 'catalog:cart' %}">Cart{% if cart_count %} <span class="count">{{ cart_count }}</span>{% endif %}</a>
+    <div class="container bar">
+      <a class="brand" href="{% url 'catalog:product_list' %}" aria-label="shopfront, home">shopfront</a>
+      <nav class="site-nav" aria-label="Categories">
+        {% for category in categories %}
+          <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on" aria-current="page"{% endif %}>{{ category.name }}</a>
+        {% endfor %}
+      </nav>
+      <a class="cart-link" href="{% url 'catalog:cart' %}">Cart{% if cart_count %} <span class="count">{{ cart_count }}</span>{% endif %}</a>
+    </div>
   </header>
   {% if messages %}
-    <ul class="messages" role="status">
+    <ul class="messages container" role="status">
       {% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}
     </ul>
   {% endif %}
   <main>{% block content %}{% endblock %}</main>
   <footer class="site-footer">
-    <p>No real orders are taken and nothing ships.</p>
-    <p>Built with Django and Stripe Checkout by Kwabena Sasu-Boakye ·
-      <a href="https://github.com/kwagyei/ecommerce-shopfront">source on GitHub</a></p>
+    <div class="container foot">
+      <p class="foot-close">No real orders are taken and nothing ships.</p>
+      <nav class="foot-nav" aria-label="Footer">
+        {% for category in categories %}<a href="{{ category.get_absolute_url }}">{{ category.name }}</a>{% endfor %}
+        <a href="{% url 'catalog:cart' %}">Cart</a>
+      </nav>
+      <p class="foot-sign">Built with Django and Stripe Checkout by Kwabena Sasu-Boakye.
+        <a href="https://github.com/kwagyei/ecommerce-shopfront">Source on GitHub</a></p>
+      {% include "_photo_credits.html" %}
+    </div>
   </footer>
 </body>
 </html>

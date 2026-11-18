@@ -11,7 +11,7 @@ exactly once, and an admin for working orders.
 expiry date and any CVC. No real money moves and nothing ships. The site runs on a free
 instance that sleeps when idle, so the first visit can take about a minute to wake it.
 
-![The shopfront home page: a hero reading "Things made to last." beside illustrated product cards, under a banner giving the Stripe test card](docs/screenshots/home.png)
+![The shopfront home page: "Things made to last." in a large serif beside a photograph of the brass lamp and its price, under a banner giving the Stripe test card](docs/screenshots/home.jpg)
 
 **What to look at:** paying creates an order through a signed, idempotent Stripe webhook that cannot double-process a replayed event or oversell the
 last unit, and staff work orders through a guarded admin.
@@ -29,8 +29,8 @@ happens on Stripe's hosted page.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/product.png" alt="Product page for the enamel kettle: illustration, price, stock count and an add-to-cart form"></td>
-    <td width="50%"><img src="docs/screenshots/cart.png" alt="Cart with three items beside an order summary, a Checkout button and the test-card note"></td>
+    <td width="50%"><img src="docs/screenshots/product.jpg" alt="Product page for the enamel kettle: photograph, price, quantity and add-to-cart, then ruled rows for stock, category and delivery"></td>
+    <td width="50%"><img src="docs/screenshots/cart.jpg" alt="Cart with three items beside an order summary, a Checkout button and the test-card note"></td>
   </tr>
   <tr>
     <td><b>Product page.</b> Prices come from the database in öre on every render.</td>
@@ -46,7 +46,7 @@ happens on Stripe's hosted page.
   </tr>
 </table>
 
-<p align="center"><img src="docs/screenshots/mobile-home.png" width="300" alt="The home page at phone width"></p>
+<p align="center"><img src="docs/screenshots/mobile-home.jpg" width="300" alt="The home page at phone width"></p>
 
 Screenshots were taken from a local instance with demo orders, using headless Chrome with
 reduced motion so no animation is caught mid-frame.
@@ -241,13 +241,20 @@ the redirect, and anyone can type the success URL. So the success page only clea
 cart, and only for the Checkout Session that browser started. Creating orders is the
 webhook's job, because Stripe retries it until it lands.
 
-**The look costs nothing at runtime.** No web fonts: headings use a serif stack (Iowan
-Old Style, Charter, Palatino) already installed on macOS, iOS and Windows. The product
-illustrations are hand-written SVGs of a few kilobytes each. Motion is CSS only: cards rise
-in and lift on hover, messages slide in, and same-site navigations crossfade through the
-browser's View Transitions, with each product image morphing from the grid into its own
-page. Browsers without View Transitions navigate normally. Under `prefers-reduced-motion`
-every animation is switched off, though no state change depends on one.
+**The look is self-contained.** Headings and prices are set in Libre Caslon Display, the
+rest in Hanken Grotesk. Both are self-hosted woff2 files (about 70 KB in all, under the
+SIL Open Font License), so no page asks a font CDN for anything. Colour comes from one set
+of OKLCH tokens in `static/tokens.css`: bone paper, near-black ink and no accent hue, so the
+photographs carry the colour. Rules and type do the work that cards and shadows usually do.
+Motion is limited to state: an underline or a button shade on hover, and same-site
+navigations crossfade through the browser's View Transitions, with each product image
+morphing from the grid into its own page. Under `prefers-reduced-motion` that is off too.
+
+**Product photos are free-licence stand-ins, resized before commit.** They come from
+Unsplash, are cropped to 1200 px wide (about 3.5 MB for all twelve) and are credited in the
+footer. The original hand-drawn SVGs are still in `static/products`: migration `0005`
+switched the seeded products to the photos, only where a product still had its original
+drawing, and it reverses.
 
 **Plain forms, not HTMX.** The cart works with JavaScript disabled and depends on no
 third-party script at runtime. HTMX can be layered on later as enhancement; starting with
@@ -288,6 +295,9 @@ promptly went missing from the product detail page. There's a regression test fo
   pay, the webhook fulfils the first and flags the second **needs refund**.
 - **New demo products don't reach an existing database.** Because `seed` only fills an
   empty catalog, products added to the seed list later have to be created in the admin.
+- **The product photos are stand-ins.** They show similar items, not the ones listed:
+  the kettle is enamel but not speckled, the torch is shown in use rather than on its own.
+  The footer says so. A real shop would photograph its own stock.
 - **Images ship with the code.** Adding a product image means a commit and a deploy, the
   trade-off for not paying for object storage.
 - **Refunds are manual.** An order flagged *needs refund* (paid for stock that sold out

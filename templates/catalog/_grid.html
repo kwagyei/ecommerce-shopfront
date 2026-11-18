@@ -1,0 +1,19 @@
+{% load static %}
+<ul class="grid">
+  {% for product in items %}
+    <li class="card{% if not product.is_in_stock %} sold-out{% endif %}">
+      <a href="{{ product.get_absolute_url }}">
+        <span class="media">
+          {% if product.image %}<img src="{% static product.image %}" alt="" width="600" height="400" loading="lazy" style="view-transition-name: product-{{ product.pk }}">{% endif %}
+          {% if not product.is_in_stock %}<span class="badge">Out of stock</span>{% endif %}
+        </span>
+        <span class="body">
+          <span class="name">{{ product.name }}</span>
+          <span class="price">{{ product.price }} kr</span>
+        </span>
+      </a>
+    </li>
+  {% empty %}
+    <li class="empty">Nothing here yet.</li>
+  {% endfor %}
+</ul>

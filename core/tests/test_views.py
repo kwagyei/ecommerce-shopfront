@@ -92,3 +92,36 @@ def test_every_page_says_checkout_is_in_test_mode_and_names_the_test_card(client
         content = client.get(url).content
         assert b"Stripe test mode" in content, url
         assert b"4242 4242 4242 4242" in content, url
+
+
+def test_home_features_the_first_product_in_stock(client):
+    """The hero offers something a visitor can actually buy, so a sold-out product
+    that sorts first by name is skipped."""
+    make_product(slug="anvil", name="Anvil", stock=0)
+    make_product(slug="bellows", name="Bellows", stock=2)
+
+    response = client.get(reverse("catalog:product_list"))
+    assert response.context["featured"].slug == "bellows"
+
+
+def test_home_has_no_featured_product_when_everything_is_sold_out(client):
+    make_product(slug="anvil", name="Anvil", stock=0)
+
+    response = client.get(reverse("catalog:product_list"))
+    assert response.status_code == 200
+    assert response.context["featured"] is None
+    assert b'class="offer"' not in response.content
+
+
+def test_home_shelves_products_under_their_category(client):
+    kitchen = make_category(name="Kitchen", slug="kitchen")
+    desk = make_category(name="Desk", slug="desk")
+    make_product(category=kitchen, slug="kettle", name="Enamel kettle")
+    make_product(category=desk, slug="lamp", name="Brass lamp")
+
+    content = client.get(reverse("catalog:product_list")).content.decode()
+    # Shelves sort by category name, so Desk comes first; each holds only its own products.
+    desk_shelf, kitchen_shelf = content.split('id="shelf-desk"')[1].split('id="shelf-kitchen"')
+    assert "Brass lamp" in desk_shelf and "Enamel kettle" not in desk_shelf
+    kitchen_shelf = kitchen_shelf.split("</section>")[0]
+    assert "Enamel kettle" in kitchen_shelf and "Brass lamp" not in kitchen_shelf

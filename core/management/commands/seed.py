@@ -69,7 +69,7 @@ class Command(BaseCommand):
                 price_minor=price_minor,
                 stock=stock,
                 description=description,
-                image=f"products/{slug}.svg",
+                image=f"products/{slug}.jpg",
             )
 
         self.stdout.write(

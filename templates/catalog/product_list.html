@@ -4,46 +4,70 @@
 {% block content %}
   {% if not current %}
     <section class="hero">
-      <div>
-        <p class="eyebrow">Kitchen · Desk · Outdoors</p>
-        <h1>Things made to last.</h1>
-        <p class="lede">A small collection of everyday goods in enamel, oak, wool and brass, chosen to be used for years.</p>
-        <a class="button accent" href="#shop">Shop everything <span class="arrow" aria-hidden="true">→</span></a>
+      <div class="container hero-grid">
+        <div class="hero-text">
+          <h1>Things made to last.</h1>
+          <p class="lead">A small collection of everyday goods in enamel, oak, wool and brass, chosen to be used for years.</p>
+          <p class="actions"><a class="button" href="#shop">Shop everything</a></p>
+        </div>
+        {% if featured %}
+          <figure class="offer">
+            <a class="plate" href="{{ featured.get_absolute_url }}">
+              {% if featured.image %}<img src="{% static featured.image %}" alt="{{ featured.name }}" width="600" height="400" fetchpriority="high" style="view-transition-name: product-{{ featured.pk }}">{% endif %}
+            </a>
+            <figcaption class="offer-row">
+              <a href="{{ featured.get_absolute_url }}">{{ featured.name }}</a>
+              <span class="offer-price">{{ featured.price }} kr</span>
+            </figcaption>
+          </figure>
+        {% endif %}
       </div>
-      <div class="hero-art" aria-hidden="true">
-        <img src="{% static 'products/enamel-kettle.svg' %}" alt="" width="600" height="400">
-        <img src="{% static 'products/brass-lamp.svg' %}" alt="" width="600" height="400">
-        <img src="{% static 'products/wool-blanket.svg' %}" alt="" width="600" height="400">
+    </section>
+
+    {% regroup products|dictsort:"category.name" by category as shelves %}
+    {% for shelf in shelves %}
+      <section class="shelf shelf-{% cycle 'grid' 'list' 'grid' %}"{% if forloop.first %} id="shop"{% endif %} aria-labelledby="shelf-{{ shelf.grouper.slug }}">
+        <div class="container">
+          <div class="shelf-head">
+            <h2 id="shelf-{{ shelf.grouper.slug }}">{{ shelf.grouper.name }}</h2>
+            <a class="link" href="{{ shelf.grouper.get_absolute_url }}">All of {{ shelf.grouper.name|lower }}</a>
+          </div>
+          {% if forloop.counter == 2 %}
+            {% include "catalog/_lead_list.html" with items=shelf.list %}
+          {% else %}
+            {% include "catalog/_grid.html" with items=shelf.list %}
+          {% endif %}
+        </div>
+      </section>
+      {% if forloop.first %}
+        <section class="band" aria-labelledby="how-to-pay">
+          <div class="container band-grid">
+            <h2 id="how-to-pay">Paid for in test mode</h2>
+            <dl class="spec">
+              <div><dt>Card</dt><dd class="num">4242 4242 4242 4242</dd></div>
+              <div><dt>Expiry and CVC</dt><dd>Any future date, any CVC</dd></div>
+              <div><dt>Delivery</dt><dd>No real orders are taken and nothing ships</dd></div>
+            </dl>
+          </div>
+        </section>
+      {% endif %}
+    {% empty %}
+      <section class="shelf" id="shop"><div class="container"><p class="empty">Nothing here yet.</p></div></section>
+    {% endfor %}
+  {% else %}
+    <section class="listing" id="shop">
+      <div class="container">
+        <div class="listing-head">
+          <h1>{{ current.name }}</h1>
+          <nav class="tabs" aria-label="Filter by category">
+            <a href="{% url 'catalog:product_list' %}#shop">All</a>
+            {% for category in categories %}
+              <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on" aria-current="page"{% endif %}>{{ category.name }}</a>
+            {% endfor %}
+          </nav>
+        </div>
+        {% include "catalog/_grid.html" with items=products %}
       </div>
     </section>
   {% endif %}
-
-  <div class="section-head" id="shop">
-    {% if current %}<h1>{{ current.name }}</h1>{% else %}<h2>Everything</h2>{% endif %}
-    <nav class="chips" aria-label="Filter by category">
-      <a href="{% url 'catalog:product_list' %}#shop"{% if not current %} class="on"{% endif %}>All</a>
-      {% for category in categories %}
-        <a href="{{ category.get_absolute_url }}"{% if current == category %} class="on"{% endif %}>{{ category.name }}</a>
-      {% endfor %}
-    </nav>
-  </div>
-
-  <ul class="grid">
-    {% for product in products %}
-      <li class="card{% if not product.is_in_stock %} sold-out{% endif %}" style="--i: {{ forloop.counter0 }}">
-        <a href="{{ product.get_absolute_url }}">
-          <div class="media">
-            {% if product.image %}<img src="{% static product.image %}" alt="" width="600" height="400" style="view-transition-name: product-{{ product.pk }}">{% endif %}
-            {% if not product.is_in_stock %}<span class="badge">Out of stock</span>{% endif %}
-          </div>
-          <div class="body">
-            <span class="name">{{ product.name }}</span>
-            <span class="price">{{ product.price }} kr</span>
-          </div>
-        </a>
-      </li>
-    {% empty %}
-      <li class="empty">Nothing here yet.</li>
-    {% endfor %}
-  </ul>
 {% endblock %}

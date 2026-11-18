@@ -60,7 +60,7 @@ class Product(models.Model):
         max_length=200,
         blank=True,
         validators=[validate_static_path],
-        help_text="Path under static/, e.g. products/enamel-kettle.svg",
+        help_text="Path under static/, e.g. products/enamel-kettle.jpg",
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
