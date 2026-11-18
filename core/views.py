@@ -22,7 +22,13 @@ CHECKOUT_SESSION_KEY = "checkout_session_id"
 
 def product_list(request):
     products = Product.objects.active().select_related("category")
-    return render(request, "catalog/product_list.html", {"products": products, "current": None})
+    # The home page leads with one product a visitor can actually buy.
+    featured = next((p for p in products if p.is_in_stock), None)
+    return render(
+        request,
+        "catalog/product_list.html",
+        {"products": products, "current": None, "featured": featured},
+    )
 
 
 def category_detail(request, slug):

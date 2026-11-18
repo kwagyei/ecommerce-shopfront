@@ -7,3 +7,6 @@ __pycache__/
 .env
 db.sqlite3
 staticfiles/
+
+# Hallmark design-run records and screenshots (local only)
+.hallmark/
